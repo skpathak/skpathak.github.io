@@ -11,3 +11,4 @@ Format (one per line):  `- filename.html — your short note`
 Files without a note still show up; they just won't have a description.
 
 - HM-MRI_Identifiability.html — HM-MRI identifiability analysis and results.
+- qsm_modeling.html - Quantitative Susceptibility Mapping — From Phase to χ

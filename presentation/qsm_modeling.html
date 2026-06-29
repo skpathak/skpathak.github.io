@@ -1,0 +1,664 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Quantitative Susceptibility Mapping — From Phase to χ</title>
+<style>
+:root{
+  --bg:#080B16; --bg2:#0C1120; --panel:#121A30; --panel2:#18223E;
+  --line:#26314f; --line2:#34416a;
+  --tx:#EAEEF8; --tx2:#9AA6C6; --tx3:#697699;
+  --para:#F2674A; --dia:#46A8E2; --field:#A487E6; --zero:#CBD5EC;
+  --disp:'Space Grotesk','Segoe UI',system-ui,sans-serif;
+  --body:'Inter','Segoe UI',system-ui,-apple-system,sans-serif;
+  --mono:'JetBrains Mono','SFMono-Regular',Consolas,monospace;
+}
+*{ box-sizing:border-box; }
+html,body{ margin:0; height:100%; background:var(--bg); overflow:hidden; font-family:var(--body); color:var(--tx); }
+
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap');
+
+.deck{ position:fixed; inset:0; background:var(--bg); }
+.stage{ position:absolute; left:50%; top:50%; width:1180px; height:700px;
+  transform-origin:50% 50%; transform:translate(-50%,-50%); }
+.slide{ position:absolute; inset:0; background:var(--bg); display:none; }
+.slide.active{ display:block; }
+.slide.alt{ background:#0A0E1A; }
+
+.slidewrap{ position:absolute; inset:0; padding:60px 78px; display:flex;
+  flex-direction:column; justify-content:center; }
+
+h1,h2,h3{ font-family:var(--disp); letter-spacing:-0.01em; line-height:1.1; margin:0 0 .35em; font-weight:600; }
+h1{ font-size:50px; font-weight:700; letter-spacing:-0.02em; }
+h2{ font-size:35px; }
+h3{ font-size:25px; }
+p,li{ line-height:1.5; font-size:25px; margin:.3em 0; }
+strong{ color:#fff; font-weight:600; } em{ color:var(--field); font-style:normal; }
+
+.eyebrow{ font-family:var(--mono); font-size:13px; letter-spacing:.22em; text-transform:uppercase;
+  color:var(--tx3); margin:0 0 22px; display:flex; align-items:center; gap:11px; }
+.eyebrow::before{ content:""; width:26px; height:2px; background:var(--field); display:inline-block; }
+
+.lead{ color:var(--tx2); font-size:23px; max-width:24em; }
+.small{ font-size:18.5px; color:var(--tx2); line-height:1.45; }
+.kicker{ color:var(--tx3); font-family:var(--mono); font-size:15px; letter-spacing:.04em; }
+.muted{ color:var(--tx2); }
+
+.cols{ display:grid; grid-template-columns:1fr 1fr; gap:34px; align-items:start; }
+.cols.w64{ grid-template-columns:1.6fr 1fr; }
+.cols.w46{ grid-template-columns:1fr 1.55fr; }
+.stack>*+*{ margin-top:.55em; }
+
+.card{ background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:18px 20px; }
+.card.tight{ padding:13px 16px; }
+.card h3{ margin-bottom:.3em; }
+
+.tag{ font-family:var(--mono); font-size:14px; letter-spacing:.04em; padding:3px 9px; border-radius:6px; display:inline-block; }
+.tag.para{ color:var(--para); background:rgba(242,103,74,.13); border:1px solid rgba(242,103,74,.3); }
+.tag.dia{ color:var(--dia); background:rgba(70,168,226,.13); border:1px solid rgba(70,168,226,.3); }
+.tag.field{ color:var(--field); background:rgba(164,135,230,.13); border:1px solid rgba(164,135,230,.3); }
+
+ul.clean{ list-style:none; margin:0; padding:0; }
+ul.clean li{ padding-left:1.1em; position:relative; margin:.42em 0; font-size:19.5px; line-height:1.4; }
+ul.clean li::before{ content:"›"; position:absolute; left:0; color:var(--field); }
+
+.mono{ font-family:var(--mono); }
+.eq{ background:var(--bg2); border:1px solid var(--line); border-left:3px solid var(--field);
+  border-radius:10px; padding:9px 18px; margin:.4em 0; text-align:left; overflow-x:auto; }
+.eqlabel{ font-family:var(--mono); font-size:13px; color:var(--tx3); letter-spacing:.05em; text-transform:uppercase; margin-bottom:.1em; }
+math{ color:var(--tx); font-size:1.15em; }
+.eq math{ margin:.15em 0; }
+
+.cbar{ height:14px; border-radius:7px; border:1px solid var(--line2);
+  background:linear-gradient(90deg,#2E78C2 0%,#4FA8E2 22%,#C9D5EC 50%,#F0A07E 72%,#EE5638 100%); }
+.cbar-row{ display:flex; justify-content:space-between; font-family:var(--mono); font-size:14px; color:var(--tx2); margin-top:6px; }
+
+table.q{ border-collapse:collapse; width:100%; font-size:18.5px; }
+table.q th,table.q td{ text-align:left; padding:9px 12px; border-bottom:1px solid var(--line); vertical-align:top; }
+table.q th{ font-family:var(--mono); font-weight:500; color:var(--tx3); font-size:15px; letter-spacing:.04em; text-transform:uppercase; }
+table.q td.k{ color:var(--field); font-family:var(--mono); white-space:nowrap; }
+
+.divider .num{ font-family:var(--disp); font-size:140px; font-weight:700; color:var(--panel2); line-height:.85; }
+.divider .rule{ width:64px; height:3px; background:var(--field); margin:16px 0; }
+.divider h2{ font-size:46px; }
+
+.flow{ display:flex; align-items:stretch; gap:0; flex-wrap:wrap; }
+.flow .step{ background:var(--panel); border:1px solid var(--line); border-radius:11px; padding:11px 14px; flex:1; min-width:0; }
+.flow .arrow{ align-self:center; color:var(--tx3); padding:0 8px; font-size:22px; }
+.flow .step .st{ font-family:var(--mono); font-size:12px; color:var(--tx3); letter-spacing:.05em; }
+.flow .step .nm{ font-family:var(--disp); font-weight:600; font-size:19px; margin-top:2px; }
+.flow .step .al{ font-size:14px; color:var(--dia); font-family:var(--mono); margin-top:4px; }
+
+.legend{ display:flex; gap:18px; font-size:16px; color:var(--tx2); margin-top:.5em; font-family:var(--mono); }
+.dotp{ color:var(--para); } .dotd{ color:var(--dia); }
+.corner{ position:absolute; top:28px; right:32px; opacity:.85; }
+
+/* HUD */
+.pbar-track{ position:fixed; top:0; left:0; right:0; height:3px; background:rgba(255,255,255,.05); z-index:20; }
+.pbar{ height:100%; width:0; background:var(--field); transition:width .25s ease; }
+.hud-bottom{ position:fixed; bottom:16px; left:0; right:0; display:flex; justify-content:center; align-items:center; gap:16px; z-index:20; }
+.navbtn{ background:var(--panel); border:1px solid var(--line2); color:var(--tx2); width:36px; height:32px; border-radius:8px; cursor:pointer; font-size:16px; line-height:1; }
+.navbtn:hover{ color:#fff; border-color:var(--field); }
+.pnum{ font-family:var(--mono); font-size:14px; color:var(--tx3); min-width:62px; text-align:center; }
+.hint{ position:fixed; bottom:18px; right:22px; font-family:var(--mono); font-size:12px; color:var(--tx3); z-index:20; opacity:.7; }
+</style>
+</head>
+<body>
+<div class="pbar-track"><div class="pbar" id="pbar"></div></div>
+<div class="deck">
+<div class="stage" id="stage">
+
+<!-- 1 TITLE -->
+<section class="slide active alt">
+ <div class="slidewrap">
+  <svg class="corner" width="120" height="80" viewBox="0 0 120 80">
+    <line x1="60" y1="6" x2="60" y2="74" stroke="#34416a" stroke-width="1"/>
+    <path d="M60 40 L18 12 M60 40 L102 12 M60 40 L18 68 M60 40 L102 68" stroke="#34416a" stroke-width="1" fill="none"/>
+    <path d="M60 40 L30 40 A34 34 0 0 1 47 16 Z" fill="rgba(70,168,226,.18)"/>
+    <path d="M60 40 L90 40 A34 34 0 0 0 73 16 Z" fill="rgba(242,103,74,.18)"/>
+    <circle cx="60" cy="40" r="2.5" fill="#A487E6"/>
+  </svg>
+  <p class="eyebrow">Quantitative MRI · tissue magnetism</p>
+  <h1>Quantitative Susceptibility<br>Mapping</h1>
+  <p class="lead" style="margin-top:14px; font-size:24px;">How a 3D multi-echo gradient-echo scan lets us <em>measure</em> the magnetic susceptibility of tissue — deconvolving the dipole field hidden in the MRI phase.</p>
+  <div style="margin-top:34px; max-width:440px;">
+    <div class="cbar"></div>
+    <div class="cbar-row"><span>− χ &nbsp;diamagnetic</span><span>0</span><span>paramagnetic&nbsp; + χ</span></div>
+    <div class="cbar-row" style="color:var(--tx3);"><span>myelin · calcium</span><span></span><span>iron · deoxyhemoglobin</span></div>
+  </div>
+  <p class="kicker" style="margin-top:30px;">Philips Ingenia · 6-echo 3D GRE · TE 9.8–44.8 ms → χ map (ppm)</p>
+ </div>
+</section>
+
+<!-- 2 DIVIDER 01 -->
+<section class="slide alt divider">
+ <div class="slidewrap">
+  <div class="num">01</div><div class="rule"></div>
+  <h2>The quantity we want</h2>
+  <p class="lead">Magnetic susceptibility — what it is, and why it is worth the trouble of recovering.</p>
+ </div>
+</section>
+
+<!-- 3 WHAT IS CHI -->
+<section class="slide">
+ <div class="slidewrap">
+  <p class="eyebrow">The physical quantity</p>
+  <h2>Susceptibility χ: how strongly tissue magnetizes</h2>
+  <div class="cols w64" style="margin-top:6px;">
+   <div class="stack">
+     <p style="font-size:22px;">Place tissue in the scanner's field <math><msub><mi>B</mi><mn>0</mn></msub></math> and it develops its own magnetization <math><mi mathvariant="bold">M</mi></math>. Susceptibility is the constant of proportionality — a dimensionless tissue property in parts per million.</p>
+     <div class="eq"><div class="eqlabel">Definition</div>
+       <math display="block"><mi mathvariant="bold">M</mi><mo>=</mo><mi>χ</mi><mspace width="0.15em"/><mi mathvariant="bold">H</mi><mo>,</mo><mspace width="1.4em"/><mi>χ</mi><mspace width="0.3em"/><mtext>[ppm]</mtext></math>
+     </div>
+     <p class="small">χ is tiny (≈ ±0.2 ppm in brain), so its field effect is subtle — but the MRI <em>phase</em> integrates it over the echo time, making it measurable.</p>
+   </div>
+   <div class="stack">
+     <div class="card tight"><span class="tag para">χ &gt; 0 · paramagnetic</span>
+       <p class="small" style="margin-top:.5em;">Aligns <em>with</em> <math><msub><mi>B</mi><mn>0</mn></msub></math>, <strong>raises</strong> local field. Sources: non-heme <strong>iron</strong> (ferritin), <strong>deoxyhemoglobin</strong>, hemorrhage.</p></div>
+     <div class="card tight"><span class="tag dia">χ &lt; 0 · diamagnetic</span>
+       <p class="small" style="margin-top:.5em;">Opposes <math><msub><mi>B</mi><mn>0</mn></msub></math>, <strong>lowers</strong> local field. Sources: <strong>myelin</strong>, <strong>calcium</strong>, lipids.</p></div>
+     <p class="small" style="color:var(--tx3);">The <strong>sign</strong> separates a bleed (+) from a calcification (−) where magnitude cannot.</p>
+   </div>
+  </div>
+ </div>
+</section>
+
+<!-- 4 THE ARC -->
+<section class="slide">
+ <div class="slidewrap">
+  <p class="eyebrow">The whole problem in one line</p>
+  <h2>Nature runs a forward model. QSM runs it backwards.</h2>
+  <div class="flow" style="margin-top:14px;">
+    <div class="step"><div class="st">SOURCE</div><div class="nm" style="color:var(--zero);">χ(r)</div><div class="al" style="color:var(--tx3);">susceptibility</div></div>
+    <div class="arrow">→</div>
+    <div class="step"><div class="st">CONVOLVE WITH DIPOLE</div><div class="nm" style="color:var(--para);">ΔB(r)</div><div class="al" style="color:var(--tx3);">field perturbation</div></div>
+    <div class="arrow">→</div>
+    <div class="step"><div class="st">LARMOR × TE</div><div class="nm" style="color:var(--field);">φ(r)</div><div class="al" style="color:var(--tx3);">measured phase</div></div>
+  </div>
+  <p style="text-align:center; color:var(--tx3); font-family:var(--mono); font-size:16px; margin:16px 0;">▲ forward (physics) &nbsp;|&nbsp; reconstruction ▼</p>
+  <div class="flow">
+    <div class="step" style="border-color:var(--line2);"><div class="st">UNWRAP + FIT</div><div class="nm" style="color:var(--field);">field map</div></div>
+    <div class="arrow">←</div>
+    <div class="step" style="border-color:var(--line2);"><div class="st">REMOVE BACKGROUND</div><div class="nm" style="color:var(--para);">local field</div></div>
+    <div class="arrow">←</div>
+    <div class="step" style="border-color:var(--line2);"><div class="st">DIPOLE INVERSION</div><div class="nm" style="color:var(--zero);">χ̂(r)</div></div>
+  </div>
+  <p class="small" style="margin-top:18px;">Every QSM pipeline is these six arrows. The physics on top is exact; all the difficulty lives in the bottom row — because one middle step is <em>not invertible</em>.</p>
+ </div>
+</section>
+
+<!-- 5 DIVIDER 02 -->
+<section class="slide alt divider">
+ <div class="slidewrap"><div class="num">02</div><div class="rule"></div>
+  <h2>The forward model</h2>
+  <p class="lead">From a susceptibility distribution to the phase your scanner records.</p></div>
+</section>
+
+<!-- 6 DIPOLE REAL -->
+<section class="slide">
+ <div class="slidewrap">
+  <p class="eyebrow">Step 1 · χ makes a field</p>
+  <h2>Each susceptibility source is a magnetic dipole</h2>
+  <div class="cols w46">
+   <div>
+     <svg viewBox="0 0 300 250" width="100%">
+       <defs><marker id="ah" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M2 2 L8 5 L2 8" fill="none" stroke="#A487E6" stroke-width="1.4"/></marker></defs>
+       <line x1="150" y1="14" x2="150" y2="40" stroke="#697699" stroke-width="1.2" marker-end="url(#ah)"/>
+       <text x="158" y="26" fill="#697699" font-family="monospace" font-size="11">B₀</text>
+       <g fill="none" stroke-width="1.4">
+         <ellipse cx="150" cy="132" rx="34" ry="84" stroke="#46A8E2" opacity=".9"/>
+         <ellipse cx="150" cy="132" rx="64" ry="98" stroke="#5e7fb5" opacity=".7"/>
+         <ellipse cx="150" cy="132" rx="96" ry="110" stroke="#7a5fb0" opacity=".5"/></g>
+       <circle cx="150" cy="132" r="6" fill="#F2674A"/>
+       <text x="150" y="244" fill="#9AA6C6" font-family="monospace" font-size="11" text-anchor="middle">dipole field of a point χ</text>
+     </svg>
+   </div>
+   <div class="stack">
+     <p style="font-size:21px;">A small region of susceptibility perturbs the field with a dipole pattern — positive lobes along <math><msub><mi>B</mi><mn>0</mn></msub></math>, negative to the sides.</p>
+     <div class="eq"><div class="eqlabel">Unit dipole kernel (real space)</div>
+       <math display="block"><mi>d</mi><mo>(</mo><mi mathvariant="bold">r</mi><mo>)</mo><mo>=</mo>
+         <mfrac><mn>1</mn><mrow><mn>4</mn><mi>π</mi></mrow></mfrac>
+         <mfrac><mrow><mn>3</mn><msup><mi>cos</mi><mn>2</mn></msup><mi>θ</mi><mo>−</mo><mn>1</mn></mrow>
+           <msup><mrow><mo>|</mo><mi mathvariant="bold">r</mi><mo>|</mo></mrow><mn>3</mn></msup></mfrac></math>
+     </div>
+     <p class="small">The whole tissue field is every voxel's dipole superimposed — a <strong>convolution</strong>:</p>
+     <div class="eq">
+       <math display="block"><mfrac><mrow><mi>Δ</mi><mi>B</mi><mo>(</mo><mi mathvariant="bold">r</mi><mo>)</mo></mrow><msub><mi>B</mi><mn>0</mn></msub></mfrac>
+       <mo>=</mo><mi>d</mi><mo>(</mo><mi mathvariant="bold">r</mi><mo>)</mo><mo>∗</mo><mi>χ</mi><mo>(</mo><mi mathvariant="bold">r</mi><mo>)</mo></math>
+     </div>
+   </div>
+  </div>
+ </div>
+</section>
+
+<!-- 7 DIPOLE K-SPACE -->
+<section class="slide">
+ <div class="slidewrap">
+  <p class="eyebrow">Step 1 · in k-space</p>
+  <h2>Convolution becomes a simple multiplication</h2>
+  <div class="cols w64">
+   <div class="stack">
+     <p style="font-size:21px;">Fourier-transform both sides and the convolution collapses to a per-frequency product. The kernel has a clean closed form:</p>
+     <div class="eq"><div class="eqlabel">Dipole kernel in k-space (B₀ ∥ z)</div>
+       <math display="block"><mi>D</mi><mo>(</mo><mi mathvariant="bold">k</mi><mo>)</mo><mo>=</mo>
+        <mfrac><mn>1</mn><mn>3</mn></mfrac><mo>−</mo>
+        <mfrac><msubsup><mi>k</mi><mi>z</mi><mn>2</mn></msubsup><msup><mrow><mo>|</mo><mi mathvariant="bold">k</mi><mo>|</mo></mrow><mn>2</mn></msup></mfrac>
+        <mspace width="1.4em"/>
+        <mover><mrow><mi>Δ</mi><mi>B</mi></mrow><mo>^</mo></mover><mo>=</mo><msub><mi>B</mi><mn>0</mn></msub><mi>D</mi><mover><mi>χ</mi><mo>^</mo></mover></math>
+     </div>
+     <p class="small">To recover χ we would just divide by <math><mi>D</mi><mo>(</mo><mi mathvariant="bold">k</mi><mo>)</mo></math> — trivial, except where it equals zero.</p>
+     <div class="legend"><span><span class="dotp">▮</span> D &gt; 0</span><span><span class="dotd">▮</span> D &lt; 0</span><span style="color:var(--field)">— D = 0</span></div>
+   </div>
+   <div>
+     <svg viewBox="0 0 260 240" width="100%">
+       <line x1="130" y1="16" x2="130" y2="224" stroke="#34416a" stroke-width="1"/>
+       <line x1="20" y1="120" x2="240" y2="120" stroke="#34416a" stroke-width="1"/>
+       <text x="135" y="26" fill="#697699" font-family="monospace" font-size="10">k_z</text>
+       <path d="M130 120 L60 16 L200 16 Z" fill="rgba(242,103,74,.16)"/>
+       <path d="M130 120 L60 224 L200 224 Z" fill="rgba(242,103,74,.16)"/>
+       <path d="M130 120 L18 78 L18 162 Z" fill="rgba(70,168,226,.16)"/>
+       <path d="M130 120 L242 78 L242 162 Z" fill="rgba(70,168,226,.16)"/>
+       <line x1="130" y1="120" x2="60" y2="16" stroke="#A487E6" stroke-width="1.6"/>
+       <line x1="130" y1="120" x2="200" y2="16" stroke="#A487E6" stroke-width="1.6"/>
+       <line x1="130" y1="120" x2="60" y2="224" stroke="#A487E6" stroke-width="1.6"/>
+       <line x1="130" y1="120" x2="200" y2="224" stroke="#A487E6" stroke-width="1.6"/>
+       <text x="150" y="56" fill="#F2674A" font-family="monospace" font-size="11">D&gt;0</text>
+       <text x="30" y="116" fill="#46A8E2" font-family="monospace" font-size="11">D&lt;0</text>
+       <text x="130" y="238" fill="#A487E6" font-family="monospace" font-size="10" text-anchor="middle">54.7° cone : D = 0</text>
+     </svg>
+   </div>
+  </div>
+ </div>
+</section>
+
+<!-- 8 ILL-POSED -->
+<section class="slide">
+ <div class="slidewrap">
+  <p class="eyebrow">Why QSM is hard</p>
+  <h2>The magic angle makes the inversion ill-posed</h2>
+  <div class="cols" style="margin-top:4px;">
+   <div class="stack">
+     <div class="eq"><div class="eqlabel">Kernel vanishes on a cone</div>
+       <math display="block"><mi>D</mi><mo>(</mo><mi mathvariant="bold">k</mi><mo>)</mo><mo>=</mo><mn>0</mn>
+        <mspace width="0.5em"/><mo>⟺</mo><mspace width="0.5em"/>
+        <mfrac><msubsup><mi>k</mi><mi>z</mi><mn>2</mn></msubsup><msup><mrow><mo>|</mo><mi mathvariant="bold">k</mi><mo>|</mo></mrow><mn>2</mn></msup></mfrac>
+        <mo>=</mo><mfrac><mn>1</mn><mn>3</mn></mfrac>
+        <mspace width="0.5em"/><mo>⟺</mo><mspace width="0.5em"/>
+        <msub><mi>θ</mi><mi>k</mi></msub><mo>=</mo><mn>54.7</mn><mo>°</mo></math>
+     </div>
+     <p style="font-size:20px;">On this double cone, susceptibility produces <strong>no field at all</strong>. Those spatial frequencies are never recorded.</p>
+   </div>
+   <div class="stack">
+     <p style="font-size:20px;">Inverting divides by <math><mi>D</mi></math>. Near the cone <math><mi>D</mi><mo>→</mo><mn>0</mn></math>, so:</p>
+     <ul class="clean">
+       <li>noise is amplified without bound</li>
+       <li>missing-cone data → <strong>streaking</strong> at 54.7°</li>
+       <li>naïve <math><mover><mi>χ</mi><mo>^</mo></mover><mo>=</mo><mover><mrow><mi>Δ</mi><mi>B</mi></mrow><mo>^</mo></mover><mo>/</mo><mi>D</mi></math> is unusable</li>
+     </ul>
+     <p class="small" style="color:var(--tx2);">Regularization, priors and masking all exist to fill this missing cone gracefully.</p>
+   </div>
+  </div>
+ </div>
+</section>
+
+<!-- 9 FIELD TO PHASE -->
+<section class="slide">
+ <div class="slidewrap">
+  <p class="eyebrow">Step 2 · field becomes phase</p>
+  <h2>The scanner records phase, not field — via Larmor</h2>
+  <div class="cols w64">
+   <div class="stack">
+     <p style="font-size:21px;">A field offset shifts precession frequency. Over TE that shift accumulates as measurable <em>phase</em> in the complex signal:</p>
+     <div class="eq"><div class="eqlabel">Phase accrual</div>
+       <math display="block"><mi>φ</mi><mo>(</mo><mi mathvariant="bold">r</mi><mo>,</mo><mtext>TE</mtext><mo>)</mo><mo>=</mo>
+        <mo>−</mo><mi>γ</mi><mspace width="0.12em"/><mi>Δ</mi><mi>B</mi><mo>(</mo><mi mathvariant="bold">r</mi><mo>)</mo><mspace width="0.12em"/><mtext>TE</mtext>
+        <mo>+</mo><msub><mi>φ</mi><mn>0</mn></msub></math>
+     </div>
+     <p class="small"><math><mi>γ</mi></math> is the gyromagnetic ratio; <math><msub><mi>φ</mi><mn>0</mn></msub></math> is a TE-independent coil offset. The magnitude carries no χ sign — only the phase does. Sign conventions differ by vendor.</p>
+   </div>
+   <div class="card">
+     <h3 class="kicker" style="font-size:16px;">WHY PHASE, NOT MAGNITUDE</h3>
+     <ul class="clean" style="margin-top:.4em;">
+       <li>magnitude → anatomy, SNR, R2*</li>
+       <li>phase → the field, and therefore χ</li>
+       <li>phase must be <strong>raw &amp; unfiltered</strong> — homodyne-filtered SWI phase has the field stripped out</li>
+     </ul>
+     <div class="cbar" style="margin-top:14px;"></div>
+     <div class="cbar-row"><span>−</span><span>χ</span><span>+</span></div>
+   </div>
+  </div>
+ </div>
+</section>
+
+<!-- 10 MULTI-ECHO -->
+<section class="slide">
+ <div class="slidewrap">
+  <p class="eyebrow">Why six echoes</p>
+  <h2>Phase grows linearly with TE — so we fit the slope</h2>
+  <div class="cols w46">
+   <div>
+     <svg viewBox="0 0 300 225" width="100%">
+       <line x1="40" y1="195" x2="285" y2="195" stroke="#34416a" stroke-width="1"/>
+       <line x1="40" y1="195" x2="40" y2="20" stroke="#34416a" stroke-width="1"/>
+       <text x="285" y="213" fill="#697699" font-family="monospace" font-size="10" text-anchor="end">TE (ms)</text>
+       <text x="30" y="24" fill="#697699" font-family="monospace" font-size="10" text-anchor="end">φ</text>
+       <line x1="40" y1="180" x2="270" y2="52" stroke="#A487E6" stroke-width="2"/>
+       <g fill="#F2674A"><circle cx="62" cy="168" r="4"/><circle cx="100" cy="147" r="4"/><circle cx="138" cy="125" r="4"/><circle cx="176" cy="104" r="4"/><circle cx="214" cy="82" r="4"/><circle cx="252" cy="61" r="4"/></g>
+       <text x="157" y="116" fill="#A487E6" font-family="monospace" font-size="10" transform="rotate(-29 157 116)">slope = field (Hz)</text>
+       <text x="62" y="187" fill="#697699" font-family="monospace" font-size="9" text-anchor="middle">9.8</text>
+       <text x="252" y="187" fill="#697699" font-family="monospace" font-size="9" text-anchor="middle">44.8</text>
+     </svg>
+   </div>
+   <div class="stack">
+     <p style="font-size:21px;">Each echo samples the same field at a different TE. A magnitude-weighted fit of φ vs TE gives the <strong>field map</strong> in Hz — far more robust than one echo.</p>
+     <div class="eq"><div class="eqlabel">Your acquisition</div>
+       <p class="small mono" style="margin:0; color:var(--tx2);">6 echoes · TE = 9.8 / 16.8 / 23.8 / 30.8 / 37.8 / 44.8 ms · ΔTE = 7.0 ms</p></div>
+     <ul class="clean">
+       <li>six points pin the slope &amp; reject phase noise</li>
+       <li>the offset <math><msub><mi>φ</mi><mn>0</mn></msub></math> drops out of the fit</li>
+       <li>magnitude decay over the same echoes → <strong>R2*</strong> (iron-sensitive; key to χ-separation)</li>
+     </ul>
+   </div>
+  </div>
+ </div>
+</section>
+
+<!-- 11 DIVIDER 03 -->
+<section class="slide alt divider">
+ <div class="slidewrap"><div class="num">03</div><div class="rule"></div>
+  <h2>The reconstruction pipeline</h2>
+  <p class="lead">Three stages that turn a wrapped phase map into a quantitative χ map.</p></div>
+</section>
+
+<!-- 12 UNWRAP -->
+<section class="slide">
+ <div class="slidewrap">
+  <p class="eyebrow">Stage A · phase unwrapping</p>
+  <h2>Undo the 2π wraps</h2>
+  <div class="cols">
+   <div class="stack">
+     <p style="font-size:21px;">The scanner records phase only modulo <math><mn>2</mn><mi>π</mi></math>; the true accumulated phase exceeds that and "wraps." Unwrapping restores the continuous field.</p>
+     <div class="eq"><math display="block"><msub><mi>φ</mi><mtext>meas</mtext></msub><mo>=</mo><msub><mi>φ</mi><mtext>true</mtext></msub><mspace width="0.5em"/><mo>mod</mo><mspace width="0.3em"/><mn>2</mn><mi>π</mi></math></div>
+   </div>
+   <div class="stack">
+     <div class="card tight"><h3 class="kicker" style="font-size:15px;">LAPLACIAN</h3><p class="small" style="margin-top:.3em;">FFT-based Poisson solve — fast, robust, slightly smoothing.</p></div>
+     <div class="card tight"><h3 class="kicker" style="font-size:15px;">ROMEO <span class="tag field">your run</span></h3><p class="small" style="margin-top:.3em;">Path-based, quality-guided spanning tree weighted by magnitude &amp; gradient coherence. QSMxT default.</p></div>
+   </div>
+  </div>
+ </div>
+</section>
+
+<!-- 13 BACKGROUND -->
+<section class="slide">
+ <div class="slidewrap">
+  <p class="eyebrow">Stage B · background field removal</p>
+  <h2>Strip the field from sources outside the brain</h2>
+  <div class="cols w64">
+   <div class="stack">
+     <p style="font-size:21px;">The measured field is dominated by <strong>background</strong> sources — air–tissue interfaces, sinuses, imperfect shim — that dwarf the tissue field.</p>
+     <div class="eq"><div class="eqlabel">Decomposition</div>
+       <math display="block"><msub><mi>f</mi><mtext>total</mtext></msub><mo>=</mo><msub><mi>f</mi><mtext>background</mtext></msub><mo>+</mo><msub><mi>f</mi><mtext>local</mtext></msub></math></div>
+     <p class="small">Inside the brain the background is <strong>harmonic</strong> (<math><msup><mi>∇</mi><mn>2</mn></msup><msub><mi>f</mi><mtext>bg</mtext></msub><mo>=</mo><mn>0</mn></math>). A harmonic field equals its spherical mean, so subtracting that mean leaves only the local tissue field.</p>
+   </div>
+   <div class="stack">
+     <div class="card tight"><span class="tag dia">SHARP / V-SHARP</span><p class="small" style="margin-top:.4em;">Spherical-mean-value deconvolution; V-SHARP varies kernel radius near the edge.</p></div>
+     <div class="card tight"><span class="tag dia">PDF <span class="tag field">your run</span></span><p class="small" style="margin-top:.4em;">Projection onto Dipole Fields — fits background as dipoles outside the mask, then subtracts.</p></div>
+     <p class="small" style="color:var(--tx3);">Output: a clean <em>local field</em> — typically &lt;1% of the total.</p>
+   </div>
+  </div>
+ </div>
+</section>
+
+<!-- 14 INVERSION -->
+<section class="slide">
+ <div class="slidewrap">
+  <p class="eyebrow">Stage C · dipole inversion</p>
+  <h2>Deconvolve the dipole — carefully</h2>
+  <div class="cols w46">
+   <div class="stack">
+     <p style="font-size:20px;">The naïve solution explodes on the magic cone. Real methods pose it as <strong>regularized least squares</strong>:</p>
+     <div class="eq"><div class="eqlabel">Regularized inversion</div>
+       <math display="block"><mover><mi>χ</mi><mo>^</mo></mover><mo>=</mo>
+        <munder><mrow><mi>arg&#8201;min</mi></mrow><mi>χ</mi></munder>
+        <mfrac><mn>1</mn><mn>2</mn></mfrac>
+        <msubsup><mrow><mo>‖</mo><mi>W</mi><mo>(</mo><mi>D</mi><mo>∗</mo><mi>χ</mi><mo>−</mo><msub><mi>f</mi><mtext>local</mtext></msub><mo>)</mo><mo>‖</mo></mrow><mn>2</mn><mn>2</mn></msubsup>
+        <mo>+</mo><mi>λ</mi><mi>R</mi><mo>(</mo><mi>χ</mi><mo>)</mo></math></div>
+     <p class="small"><math><mi>W</mi></math> weights by SNR; <math><mi>R</mi><mo>(</mo><mi>χ</mi><mo>)</mo></math> is the prior that fills the missing cone.</p>
+   </div>
+   <div class="stack">
+     <table class="q">
+       <tr><th>Method</th><th>Prior R(χ)</th></tr>
+       <tr><td class="k">TKD</td><td>threshold the kernel — fast, streaky</td></tr>
+       <tr><td class="k">Tikhonov</td><td>L₂ smoothness</td></tr>
+       <tr><td class="k">MEDI</td><td>L₁ gradient tied to magnitude edges</td></tr>
+       <tr><td class="k">TV / RTS</td><td>edge-preserving total variation</td></tr>
+     </table>
+     <p class="small" style="color:var(--tx3);">QSMxT default: <span style="color:var(--field)">RTS</span> — an LSMR solve refined with TV, mean-referenced.</p>
+   </div>
+  </div>
+ </div>
+</section>
+
+<!-- 15 PIPELINE MAPPED -->
+<section class="slide">
+ <div class="slidewrap">
+  <p class="eyebrow">Your run, end to end</p>
+  <h2>The default guidelines-compliant chain</h2>
+  <div class="flow" style="margin-top:10px;">
+    <div class="step"><div class="st">INPUT</div><div class="nm" style="color:var(--zero)">6 mag + 6 phase</div><div class="al">MEGRE</div></div>
+    <div class="arrow">→</div>
+    <div class="step"><div class="st">COMBINE</div><div class="nm">B₀ map (ROMEO)</div><div class="al">multi-echo</div></div>
+    <div class="arrow">→</div>
+    <div class="step"><div class="st">UNWRAP</div><div class="nm">ROMEO</div></div>
+  </div>
+  <div class="flow" style="margin-top:14px;">
+    <div class="step"><div class="st">BG REMOVAL</div><div class="nm">PDF</div></div>
+    <div class="arrow">→</div>
+    <div class="step"><div class="st">INVERSION</div><div class="nm">RTS</div></div>
+    <div class="arrow">→</div>
+    <div class="step" style="border-color:var(--field)"><div class="st">OUTPUT</div><div class="nm" style="color:var(--field)">χ map (ppm)</div><div class="al">+ SWI + R2*</div></div>
+  </div>
+  <p class="small" style="margin-top:18px;">Masking is a phase-based Otsu threshold with <strong>two-pass artefact reduction</strong> — essential for TBI, where microbleeds are strong local sources that otherwise streak. The run is CPU-bound (ROMEO / PDF / RTS), so cores matter, not GPUs.</p>
+ </div>
+</section>
+
+<!-- 16 SCAN INFERENCE -->
+<section class="slide">
+ <div class="slidewrap">
+  <p class="eyebrow">How the scan becomes the answer</p>
+  <h2>What each part of the acquisition contributes</h2>
+  <table class="q" style="margin-top:6px;">
+    <tr><th>Scan component</th><th>Carries</th><th>Used to infer</th></tr>
+    <tr><td class="k">Magnitude × 6</td><td>signal amplitude &amp; decay</td><td>brain mask · SNR weighting W · R2*/T2*</td></tr>
+    <tr><td class="k">Phase × 6</td><td>field-induced phase per TE</td><td>field map (slope) → local field → <strong>χ</strong></td></tr>
+    <tr><td class="k">Echo spacing</td><td>TE sampling of the slope</td><td>robust field fit; unwrapping reliability</td></tr>
+    <tr><td class="k">B₀ direction</td><td>orientation of the dipole kernel</td><td>defines <math><mi>D</mi><mo>(</mo><mi mathvariant="bold">k</mi><mo>)</mo><mo>=</mo><mfrac><mn>1</mn><mn>3</mn></mfrac><mo>−</mo><msubsup><mi>k</mi><mi>z</mi><mn>2</mn></msubsup><mo>/</mo><msup><mrow><mo>|</mo><mi mathvariant="bold">k</mi><mo>|</mo></mrow><mn>2</mn></msup></math></td></tr>
+    <tr><td class="k">SWIp M / P</td><td>scanner SWI product (filtered)</td><td><span style="color:var(--para)">not for QSM</span> — venography / microbleed review only</td></tr>
+  </table>
+  <p class="small" style="margin-top:16px; color:var(--tx3);">The magnitude never sees χ directly — it supports the phase. All quantitative susceptibility flows from the phase slope.</p>
+ </div>
+</section>
+
+<!-- 17 ACQUISITION REQS -->
+<section class="slide">
+ <div class="slidewrap">
+  <p class="eyebrow">What makes a scan QSM-able</p>
+  <h2>Acquisition requirements — and the one trap</h2>
+  <div class="cols">
+   <div>
+    <ul class="clean">
+      <li><strong>3D spoiled multi-echo GRE</strong> (T2*-weighted)</li>
+      <li><strong>raw magnitude + phase, per echo</strong> — not the combined SWI product</li>
+      <li>phase in true <strong>radians</strong>, unfiltered (no homodyne high-pass)</li>
+      <li>4–8 echoes; short first TE; uniform ΔTE</li>
+      <li>monopolar readout preferred (bipolar needs odd/even correction)</li>
+      <li>~1 mm, near-isotropic; flow compensation helps</li>
+      <li>3 T floor; 7 T for SNR &amp; small nuclei</li>
+    </ul>
+   </div>
+   <div class="card" style="border-color:rgba(242,103,74,.35)">
+     <h3 style="color:var(--para)">The SWIp trap</h3>
+     <p class="small" style="margin-top:.4em;">A scanner's SWI phase is <strong>homodyne high-pass filtered</strong>: the low-frequency field that background removal and inversion depend on is already gone. No processing recovers it.</p>
+     <p class="small" style="margin-top:.6em; color:var(--tx2)">This is why the <span class="mono">DelRec</span> raw per-echo export is what unlocked χ for this subject.</p>
+   </div>
+  </div>
+ </div>
+</section>
+
+<!-- 18 DIVIDER 04 -->
+<section class="slide alt divider">
+ <div class="slidewrap"><div class="num">04</div><div class="rule"></div>
+  <h2>Reading χ &amp; what it reveals</h2>
+  <p class="lead">Interpretation, source separation, and applications in traumatic brain injury.</p></div>
+</section>
+
+<!-- 19 READING CHI -->
+<section class="slide">
+ <div class="slidewrap">
+  <p class="eyebrow">Interpreting the map</p>
+  <h2>Reading a susceptibility map</h2>
+  <div class="cols w64">
+   <div class="stack">
+     <p style="font-size:21px;">χ is quantitative and signed, shown on a <strong>diverging</strong> colormap centred at zero. Values are <em>relative</em> — referenced to a baseline (whole-brain mean or CSF), since absolute χ has an undetermined constant.</p>
+     <ul class="clean">
+       <li><span class="dotp">+</span> deep gray nuclei (globus pallidus, SN, red nucleus, putamen) — iron</li>
+       <li><span class="dotp">+</span> veins — deoxyhemoglobin</li>
+       <li><span class="dotd">−</span> white matter — myelin; calcifications</li>
+     </ul>
+     <p class="small" style="color:var(--tx3)">Typical brain tissue spans roughly ±0.2 ppm about the reference.</p>
+   </div>
+   <div class="card">
+     <h3 class="kicker" style="font-size:15px">THE DIAGNOSTIC TRICK</h3>
+     <p class="small" style="margin-top:.4em">On magnitude or SWI a bleed and a calcification can look identical — both dark. QSM separates them by <strong>sign</strong>:</p>
+     <div style="display:flex; gap:10px; margin-top:.7em">
+       <div style="flex:1; text-align:center; padding:10px; border-radius:9px; background:rgba(242,103,74,.12); border:1px solid rgba(242,103,74,.3)"><div style="color:var(--para); font-family:var(--mono)">+ χ</div><div class="small" style="color:var(--para)">hemorrhage</div></div>
+       <div style="flex:1; text-align:center; padding:10px; border-radius:9px; background:rgba(70,168,226,.12); border:1px solid rgba(70,168,226,.3)"><div style="color:var(--dia); font-family:var(--mono)">− χ</div><div class="small" style="color:var(--dia)">calcification</div></div>
+     </div>
+   </div>
+  </div>
+ </div>
+</section>
+
+<!-- 20 CHI SEPARATION -->
+<section class="slide">
+ <div class="slidewrap">
+  <p class="eyebrow">Beyond net χ</p>
+  <h2>χ-separation: iron and myelin hide inside one number</h2>
+  <div class="cols w46">
+   <div class="stack">
+     <div class="eq"><div class="eqlabel">A voxel holds both signs</div>
+       <math display="block"><msub><mi>χ</mi><mtext>total</mtext></msub><mo>=</mo><msub><mi>χ</mi><mtext>para</mtext></msub><mo>+</mo><msub><mi>χ</mi><mtext>dia</mtext></msub></math></div>
+     <p style="font-size:20px;">Standard QSM reports only the <strong>net</strong>. Where iron and myelin coexist they partially cancel — a "normal" χ can mask two opposing pathologies.</p>
+   </div>
+   <div class="stack">
+     <p style="font-size:20px;">Both broaden <strong>R2′</strong> regardless of sign, while contributing to χ with opposite signs. Two measurements, two unknowns:</p>
+     <div class="eq"><p class="small mono" style="margin:0; color:var(--tx2)">χ (signed) + R2′ = R2* − R2 (unsigned)</p></div>
+     <ul class="clean">
+       <li>solve χ<sub>para</sub> (iron) and χ<sub>dia</sub> (myelin) separately</li>
+       <li>R2* comes free from your six magnitude echoes</li>
+       <li>implemented natively in <span class="mono">QSM.rs</span></li>
+     </ul>
+   </div>
+  </div>
+ </div>
+</section>
+
+<!-- 21 TBI -->
+<section class="slide">
+ <div class="slidewrap">
+  <p class="eyebrow">Application · traumatic brain injury</p>
+  <h2>What QSM adds in TBI</h2>
+  <div class="cols">
+   <div class="stack">
+     <div class="card tight"><span class="tag para">Microbleeds</span><p class="small" style="margin-top:.4em">Diffuse axonal injury markers. QSM confirms a focus is truly paramagnetic (blood) vs a calcified mimic — the sign SWI can't give.</p></div>
+     <div class="card tight"><span class="tag para">Deep-gray iron</span><p class="small" style="margin-top:.4em">Chronic TBI accumulates iron in SN, GP, red nucleus, thalamus — a quantitative secondary-neurodegeneration signal.</p></div>
+   </div>
+   <div class="stack">
+     <div class="card tight"><span class="tag field">Oxygenation</span><p class="small" style="margin-top:.4em">Venous χ → OEF / CMRO₂; pairs with ASL CBF for oxygen metabolism after injury.</p></div>
+     <div class="card tight"><span class="tag dia">χ-separation</span><p class="small" style="margin-top:.4em">At a shear lesion: iron deposition <em>and</em> demyelination together — disentangled into separate maps. The strongest research angle here.</p></div>
+   </div>
+  </div>
+ </div>
+</section>
+
+<!-- 22 TOOLS -->
+<section class="slide">
+ <div class="slidewrap">
+  <p class="eyebrow">The software landscape</p>
+  <h2>Three layers, one set of algorithms</h2>
+  <table class="q" style="margin-top:6px;">
+    <tr><th>Tool</th><th>Layer</th><th>Best for</th></tr>
+    <tr><td class="k">QSMxT</td><td>turnkey pipeline (container)</td><td>run a cohort with no coding — your current path</td></tr>
+    <tr><td class="k">SEPIA</td><td>modular MATLAB toolbox</td><td>swap algorithms per stage; methods comparison</td></tr>
+    <tr><td class="k">QSM.rs</td><td>Rust library, no runtime</td><td>embed χ recon — FFI or <strong>WebAssembly in the browser</strong> next to NiiVue</td></tr>
+  </table>
+  <p class="small" style="margin-top:16px;">All three share the same algorithm family (ROMEO, PDF, RTS, MEDI…). QSMxT and QSM.rs are by the same author — start turnkey, then port to the embeddable library once a result is validated.</p>
+ </div>
+</section>
+
+<!-- 23 SUMMARY -->
+<section class="slide alt">
+ <div class="slidewrap">
+  <p class="eyebrow">The whole thing on one slide</p>
+  <h2>QSM in three equations</h2>
+  <div class="eq" style="border-left-color:var(--para)"><div class="eqlabel">Forward — χ makes a field</div>
+    <math display="block"><mover><mrow><mi>Δ</mi><mi>B</mi></mrow><mo>^</mo></mover><mo>(</mo><mi mathvariant="bold">k</mi><mo>)</mo><mo>=</mo>
+     <msub><mi>B</mi><mn>0</mn></msub><mrow><mo>(</mo><mfrac><mn>1</mn><mn>3</mn></mfrac><mo>−</mo>
+     <mfrac><msubsup><mi>k</mi><mi>z</mi><mn>2</mn></msubsup><msup><mrow><mo>|</mo><mi mathvariant="bold">k</mi><mo>|</mo></mrow><mn>2</mn></msup></mfrac><mo>)</mo></mrow>
+     <mover><mi>χ</mi><mo>^</mo></mover><mo>(</mo><mi mathvariant="bold">k</mi><mo>)</mo></math></div>
+  <div class="eq" style="border-left-color:var(--field)"><div class="eqlabel">Measure — field becomes phase, fit over TE</div>
+    <math display="block"><mi>φ</mi><mo>(</mo><mtext>TE</mtext><mo>)</mo><mo>=</mo><mo>−</mo><mi>γ</mi><mspace width="0.12em"/><mi>Δ</mi><mi>B</mi><mspace width="0.12em"/><mtext>TE</mtext><mo>+</mo><msub><mi>φ</mi><mn>0</mn></msub></math></div>
+  <div class="eq" style="border-left-color:var(--dia)"><div class="eqlabel">Invert — regularize past the magic cone</div>
+    <math display="block"><mover><mi>χ</mi><mo>^</mo></mover><mo>=</mo><munder><mrow><mi>arg&#8201;min</mi></mrow><mi>χ</mi></munder>
+     <mfrac><mn>1</mn><mn>2</mn></mfrac><msubsup><mrow><mo>‖</mo><mi>W</mi><mo>(</mo><mi>D</mi><mo>∗</mo><mi>χ</mi><mo>−</mo><msub><mi>f</mi><mtext>local</mtext></msub><mo>)</mo><mo>‖</mo></mrow><mn>2</mn><mn>2</mn></msubsup>
+     <mo>+</mo><mi>λ</mi><mi>R</mi><mo>(</mo><mi>χ</mi><mo>)</mo></math></div>
+  <p style="margin-top:18px; font-size:22px;"><em>QSM deconvolves the dipole field from the measured phase to recover the magnetic susceptibility of tissue</em> — turning an incidental phase image into a quantitative iron-and-myelin map.</p>
+ </div>
+</section>
+
+</div><!-- /stage -->
+</div><!-- /deck -->
+
+<div class="hud-bottom">
+  <button class="navbtn" id="prev" aria-label="Previous">←</button>
+  <span class="pnum" id="pnum">1 / 23</span>
+  <button class="navbtn" id="next" aria-label="Next">→</button>
+</div>
+<div class="hint">← → to navigate · F fullscreen</div>
+
+<script>
+(function(){
+  var slides = Array.prototype.slice.call(document.querySelectorAll('.slide'));
+  var stage = document.getElementById('stage');
+  var i = 0;
+  function show(n){
+    i = Math.max(0, Math.min(slides.length-1, n));
+    for(var k=0;k<slides.length;k++){ slides[k].classList.toggle('active', k===i); }
+    document.getElementById('pnum').textContent = (i+1)+' / '+slides.length;
+    document.getElementById('pbar').style.width = ((i+1)/slides.length*100)+'%';
+  }
+  function next(){ show(i+1); }
+  function prev(){ show(i-1); }
+  function fit(){
+    var s = Math.min(window.innerWidth/1180, window.innerHeight/700);
+    stage.style.transform = 'translate(-50%,-50%) scale('+s+')';
+  }
+  window.addEventListener('resize', fit);
+  document.addEventListener('keydown', function(e){
+    if(['ArrowRight','ArrowDown',' ','PageDown'].indexOf(e.key)>=0){ e.preventDefault(); next(); }
+    else if(['ArrowLeft','ArrowUp','PageUp'].indexOf(e.key)>=0){ e.preventDefault(); prev(); }
+    else if(e.key==='Home'){ show(0); }
+    else if(e.key==='End'){ show(slides.length-1); }
+    else if(e.key==='f'||e.key==='F'){ if(!document.fullscreenElement){ document.documentElement.requestFullscreen&&document.documentElement.requestFullscreen(); } else { document.exitFullscreen&&document.exitFullscreen(); } }
+  });
+  document.getElementById('next').addEventListener('click', next);
+  document.getElementById('prev').addEventListener('click', prev);
+  var x0=null;
+  document.addEventListener('touchstart', function(e){ x0=e.touches[0].clientX; }, {passive:true});
+  document.addEventListener('touchend', function(e){ if(x0===null) return; var dx=e.changedTouches[0].clientX-x0; if(Math.abs(dx)>50){ dx<0?next():prev(); } x0=null; }, {passive:true});
+  fit(); show(0);
+})();
+</script>
+</body>
+</html>
