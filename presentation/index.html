@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Presentations</title>
+<style>
+  :root{
+    --bg:#0f172a; --card:#ffffff; --text:#1e293b; --muted:#64748b;
+    --accent:#2563eb; --accent-soft:#eff6ff; --border:#e2e8f0;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    background:linear-gradient(135deg,#1e293b 0%,#2563eb 140%);
+    color:var(--text); min-height:100vh; padding:6vh 6vw;
+  }
+  header{max-width:900px;margin:0 auto 2.5rem;color:#fff;}
+  header .kicker{
+    display:inline-block;font-size:.8rem;letter-spacing:.12em;text-transform:uppercase;
+    background:rgba(255,255,255,.15);padding:.35em .9em;border-radius:999px;
+    font-weight:600;margin-bottom:1rem;
+  }
+  header h1{font-size:clamp(1.8rem,4vw,2.8rem);margin-bottom:.3em;}
+  header p{color:#cbd5e1;font-size:1.05rem;max-width:60ch;}
+
+  .grid{
+    max-width:900px;margin:0 auto;
+    display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:1.1rem;
+  }
+  .card{
+    display:flex;flex-direction:column;
+    background:var(--card);border:1px solid var(--border);border-radius:14px;
+    padding:1.3rem 1.4rem;text-decoration:none;color:inherit;
+    transition:transform .15s ease, box-shadow .15s ease;
+    box-shadow:0 1px 3px rgba(0,0,0,.08);
+  }
+  .card:hover{transform:translateY(-3px);box-shadow:0 10px 28px rgba(0,0,0,.18);}
+  .card .icon{
+    width:40px;height:40px;border-radius:10px;background:var(--accent-soft);
+    display:flex;align-items:center;justify-content:center;font-size:1.3rem;margin-bottom:.9rem;
+  }
+  .card h2{font-size:1.15rem;line-height:1.25;margin-bottom:.35rem;word-break:break-word;}
+  .card .meta{font-size:.82rem;color:var(--muted);margin-top:auto;padding-top:.6rem;}
+  .card .open{color:var(--accent);font-weight:600;font-size:.9rem;margin-top:.5rem;}
+
+  .state{max-width:900px;margin:0 auto;color:#e2e8f0;font-size:1rem;padding:2rem 0;}
+  .state a{color:#fff;}
+  footer{max-width:900px;margin:3rem auto 0;color:#94a3b8;font-size:.82rem;text-align:center;}
+</style>
+</head>
+<body>
+  <header>
+    <span class="kicker">skpathak.github.io</span>
+    <h1>Presentations</h1>
+    <p>Browse the presentations below. This list updates automatically &mdash; just drop a new <code>.html</code> file into the <code>presentation/</code> folder and it appears here.</p>
+  </header>
+
+  <div class="grid" id="grid"></div>
+  <div class="state" id="state">Loading presentations&hellip;</div>
+
+  <footer id="footer"></footer>
+
+<script>
+  // Repo config — change these if you fork/rename.
+  const OWNER  = "skpathak";
+  const REPO   = "skpathak.github.io";
+  const FOLDER = "presentation";
+
+  const grid  = document.getElementById('grid');
+  const state = document.getElementById('state');
+
+  // Turn "HM-MRI_Identifiability.html" -> "HM-MRI Identifiability"
+  function prettyName(file){
+    return file
+      .replace(/\.html?$/i,'')
+      .replace(/[_-]+/g,' ')
+      .replace(/\s+/g,' ')
+      .trim();
+  }
+  function fmtSize(bytes){
+    if(!bytes && bytes!==0) return '';
+    const u=['B','KB','MB','GB']; let i=0, n=bytes;
+    while(n>=1024 && i<u.length-1){ n/=1024; i++; }
+    return n.toFixed(n<10&&i>0?1:0)+' '+u[i];
+  }
+
+  async function load(){
+    try{
+      const res = await fetch(`https://api.github.com/repos/${OWNER}/${REPO}/contents/${FOLDER}`,
+                              { headers:{ 'Accept':'application/vnd.github+json' }});
+      if(!res.ok) throw new Error('GitHub API '+res.status);
+      const items = await res.json();
+
+      const files = items
+        .filter(f => f.type==='file'
+                  && /\.html?$/i.test(f.name)
+                  && f.name.toLowerCase()!=='index.html')
+        .sort((a,b)=> a.name.localeCompare(b.name));
+
+      if(files.length===0){
+        state.innerHTML = 'No presentations yet. Drop an <code>.html</code> file into the '
+                        + '<code>'+FOLDER+'/</code> folder to get started.';
+        return;
+      }
+
+      state.style.display='none';
+      grid.innerHTML = files.map(f => `
+        <a class="card" href="./${encodeURIComponent(f.name)}">
+          <div class="icon">&#128202;</div>
+          <h2>${prettyName(f.name)}</h2>
+          <div class="open">Open &rarr;</div>
+          <div class="meta">${f.name} &middot; ${fmtSize(f.size)}</div>
+        </a>`).join('');
+
+      document.getElementById('footer').textContent =
+        files.length + (files.length===1?' presentation':' presentations');
+    }catch(err){
+      state.innerHTML = 'Could not load the list automatically ('+err.message+'). '
+        + 'You can still browse files directly on '
+        + '<a href="https://github.com/'+OWNER+'/'+REPO+'/tree/master/'+FOLDER+'">GitHub</a>. '
+        + '<br><br><em>Tip: the GitHub API allows 60 requests/hour without sign-in; '
+        + 'wait a bit and reload if you hit that limit.</em>';
+    }
+  }
+  load();
+</script>
+</body>
+</html>
