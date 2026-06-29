@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Presentations</title>
+<title>Sudhir Pathak Presentations</title>
 <style>
   :root{
     --bg:#0f172a; --card:#ffffff; --text:#1e293b; --muted:#64748b;
@@ -21,8 +21,10 @@
     background:rgba(255,255,255,.15);padding:.35em .9em;border-radius:999px;
     font-weight:600;margin-bottom:1rem;
   }
-  header h1{font-size:clamp(1.8rem,4vw,2.8rem);margin-bottom:.3em;}
-  header p{color:#cbd5e1;font-size:1.05rem;max-width:60ch;}
+  header h1{font-size:clamp(1.8rem,4vw,2.8rem);margin-bottom:.25em;}
+  header .subtitle{color:#bfdbfe;font-size:1.15rem;font-weight:500;margin-bottom:.9em;}
+  header p{color:#cbd5e1;font-size:1.05rem;max-width:62ch;}
+  header code{background:rgba(255,255,255,.14);padding:.1em .4em;border-radius:5px;font-size:.92em;}
 
   .grid{
     max-width:900px;margin:0 auto;
@@ -41,8 +43,9 @@
     display:flex;align-items:center;justify-content:center;font-size:1.3rem;margin-bottom:.9rem;
   }
   .card h2{font-size:1.15rem;line-height:1.25;margin-bottom:.35rem;word-break:break-word;}
-  .card .meta{font-size:.82rem;color:var(--muted);margin-top:auto;padding-top:.6rem;}
-  .card .open{color:var(--accent);font-weight:600;font-size:.9rem;margin-top:.5rem;}
+  .card .note{font-size:.92rem;color:var(--muted);line-height:1.45;margin-bottom:.6rem;}
+  .card .open{color:var(--accent);font-weight:600;font-size:.9rem;}
+  .card .meta{font-size:.8rem;color:#94a3b8;margin-top:auto;padding-top:.7rem;}
 
   .state{max-width:900px;margin:0 auto;color:#e2e8f0;font-size:1rem;padding:2rem 0;}
   .state a{color:#fff;}
@@ -52,76 +55,138 @@
 <body>
   <header>
     <span class="kicker">skpathak.github.io</span>
-    <h1>Presentations</h1>
-    <p>Browse the presentations below. This list updates automatically &mdash; just drop a new <code>.html</code> file into the <code>presentation/</code> folder and it appears here.</p>
+    <h1 id="title">Presentations</h1>
+    <div class="subtitle" id="subtitle"></div>
+    <p id="intro"></p>
   </header>
 
   <div class="grid" id="grid"></div>
   <div class="state" id="state">Loading presentations&hellip;</div>
-
   <footer id="footer"></footer>
 
 <script>
-  // Repo config — change these if you fork/rename.
+  // ---- Repo config (change if you fork/rename) ----
   const OWNER  = "skpathak";
   const REPO   = "skpathak.github.io";
   const FOLDER = "presentation";
+  const BRANCH = "master";
+  const MD     = "content.md";   // the file you edit
 
   const grid  = document.getElementById('grid');
   const state = document.getElementById('state');
 
-  // Turn "HM-MRI_Identifiability.html" -> "HM-MRI Identifiability"
+  function esc(s){ return s.replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+  // minimal inline markdown: `code` and **bold**
+  function inline(s){
+    return esc(s)
+      .replace(/`([^`]+)`/g,'<code>$1</code>')
+      .replace(/\*\*([^*]+)\*\*/g,'<strong>$1</strong>');
+  }
   function prettyName(file){
-    return file
-      .replace(/\.html?$/i,'')
-      .replace(/[_-]+/g,' ')
-      .replace(/\s+/g,' ')
-      .trim();
+    return file.replace(/\.html?$/i,'').replace(/[_-]+/g,' ').replace(/\s+/g,' ').trim();
   }
   function fmtSize(bytes){
-    if(!bytes && bytes!==0) return '';
-    const u=['B','KB','MB','GB']; let i=0, n=bytes;
+    if(bytes==null) return '';
+    const u=['B','KB','MB','GB']; let i=0,n=bytes;
     while(n>=1024 && i<u.length-1){ n/=1024; i++; }
     return n.toFixed(n<10&&i>0?1:0)+' '+u[i];
   }
 
-  async function load(){
-    try{
-      const res = await fetch(`https://api.github.com/repos/${OWNER}/${REPO}/contents/${FOLDER}`,
-                              { headers:{ 'Accept':'application/vnd.github+json' }});
-      if(!res.ok) throw new Error('GitHub API '+res.status);
-      const items = await res.json();
+  // Parse content.md -> {title, subtitle, intro, notes:{filename:note}}
+  function parseMd(md){
+    const out = { title:'', subtitle:'', intro:'', notes:{} };
+    const lines = md.split(/\r?\n/);
+    let introLines = [], sawHeading2 = false;
+    for(const raw of lines){
+      const line = raw.trim();
+      if(/^#\s+/.test(line) && !out.title){ out.title = line.replace(/^#\s+/,''); continue; }
+      if(/^##\s+/.test(line)){ sawHeading2 = true; continue; }
+      if(/^>\s?/.test(line) && !out.subtitle){ out.subtitle = line.replace(/^>\s?/,''); continue; }
 
-      const files = items
-        .filter(f => f.type==='file'
-                  && /\.html?$/i.test(f.name)
-                  && f.name.toLowerCase()!=='index.html')
-        .sort((a,b)=> a.name.localeCompare(b.name));
-
-      if(files.length===0){
-        state.innerHTML = 'No presentations yet. Drop an <code>.html</code> file into the '
-                        + '<code>'+FOLDER+'/</code> folder to get started.';
-        return;
+      // list item -> note mapping (only meaningful, but harmless anywhere)
+      const m = line.match(/^[-*]\s+(.+)$/);
+      if(m){
+        let body = m[1].trim();
+        // filename may be wrapped in backticks
+        let file, note='';
+        const bt = body.match(/^`([^`]+)`\s*(.*)$/);
+        if(bt){ file = bt[1].trim(); note = bt[2]; }
+        else {
+          const sep = body.search(/\s[—–-]\s|:\s/);
+          if(sep>=0){ file = body.slice(0,sep).trim(); note = body.slice(sep).replace(/^[\s—–:-]+/,''); }
+          else { file = body.trim(); }
+        }
+        note = note.replace(/^[\s—–:-]+/,'').trim();
+        if(/\.html?$/i.test(file)) out.notes[file.toLowerCase()] = note;
+        continue;
       }
+      // intro = non-heading paragraph text before the first "## " section
+      if(!sawHeading2 && line && !/^>/.test(line)) introLines.push(line);
+    }
+    out.intro = introLines.join(' ');
+    return out;
+  }
 
-      state.style.display='none';
-      grid.innerHTML = files.map(f => `
+  async function fetchMd(){
+    // 1) relative (works when .nojekyll present)  2) raw.githubusercontent fallback
+    try{ const r=await fetch('./'+MD,{cache:'no-store'}); if(r.ok) return await r.text(); }catch(e){}
+    try{
+      const r=await fetch(`https://raw.githubusercontent.com/${OWNER}/${REPO}/${BRANCH}/${FOLDER}/${MD}`,{cache:'no-store'});
+      if(r.ok) return await r.text();
+    }catch(e){}
+    return null;
+  }
+
+  async function fetchFiles(){
+    const res = await fetch(`https://api.github.com/repos/${OWNER}/${REPO}/contents/${FOLDER}`,
+                            { headers:{ 'Accept':'application/vnd.github+json' }});
+    if(!res.ok) throw new Error('GitHub API '+res.status);
+    const items = await res.json();
+    return items
+      .filter(f => f.type==='file' && /\.html?$/i.test(f.name) && f.name.toLowerCase()!=='index.html')
+      .sort((a,b)=> a.name.localeCompare(b.name));
+  }
+
+  async function load(){
+    const [md, filesResult] = await Promise.allSettled([fetchMd(), fetchFiles()]);
+
+    // Apply md-driven header text
+    let notes = {};
+    if(md.status==='fulfilled' && md.value){
+      const c = parseMd(md.value);
+      if(c.title)    document.getElementById('title').textContent = c.title;
+      if(c.subtitle) document.getElementById('subtitle').innerHTML = inline(c.subtitle);
+      if(c.intro)    document.getElementById('intro').innerHTML = inline(c.intro);
+      notes = c.notes;
+    }
+
+    if(filesResult.status!=='fulfilled'){
+      state.innerHTML = 'Could not load the file list ('+filesResult.reason.message+'). '
+        + 'Browse directly on <a href="https://github.com/'+OWNER+'/'+REPO+'/tree/'+BRANCH+'/'+FOLDER+'">GitHub</a>. '
+        + '<br><br><em>The GitHub API allows 60 requests/hour without sign-in — wait a bit and reload if needed.</em>';
+      return;
+    }
+    const files = filesResult.value;
+    if(files.length===0){
+      state.innerHTML = 'No presentations yet. Drop an <code>.html</code> file into <code>'+FOLDER+'/</code> to get started.';
+      return;
+    }
+
+    state.style.display='none';
+    grid.innerHTML = files.map(f => {
+      const note = notes[f.name.toLowerCase()];
+      return `
         <a class="card" href="./${encodeURIComponent(f.name)}">
           <div class="icon">&#128202;</div>
-          <h2>${prettyName(f.name)}</h2>
+          <h2>${esc(prettyName(f.name))}</h2>
+          ${note ? `<div class="note">${inline(note)}</div>` : ''}
           <div class="open">Open &rarr;</div>
-          <div class="meta">${f.name} &middot; ${fmtSize(f.size)}</div>
-        </a>`).join('');
+          <div class="meta">${esc(f.name)} &middot; ${fmtSize(f.size)}</div>
+        </a>`;
+    }).join('');
 
-      document.getElementById('footer').textContent =
-        files.length + (files.length===1?' presentation':' presentations');
-    }catch(err){
-      state.innerHTML = 'Could not load the list automatically ('+err.message+'). '
-        + 'You can still browse files directly on '
-        + '<a href="https://github.com/'+OWNER+'/'+REPO+'/tree/master/'+FOLDER+'">GitHub</a>. '
-        + '<br><br><em>Tip: the GitHub API allows 60 requests/hour without sign-in; '
-        + 'wait a bit and reload if you hit that limit.</em>';
-    }
+    document.getElementById('footer').textContent =
+      files.length + (files.length===1?' presentation':' presentations');
   }
   load();
 </script>
