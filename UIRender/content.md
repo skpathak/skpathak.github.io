@@ -11,3 +11,5 @@ Format (one per line):  `- folder-name — your short note`
 Folders without a note still show up; they just won't have a description.
 
 - sample-ui — Starter template showing the folder structure. Duplicate it to build your own UI.
+
+- PhantomGPT — UI that shows interaction with Phantom reports.

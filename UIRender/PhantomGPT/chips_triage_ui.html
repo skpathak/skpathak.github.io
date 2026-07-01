@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CHIPS Triage</title>
+<style>
+  :root{
+    --bg:#0e1419; --panel:#151d25; --panel2:#1b2530; --line:#26323d;
+    --ink:#e8eef2; --ink-dim:#9bb0bd; --ink-faint:#6c7d8a;
+    --clean:#3ecf8e; --review:#f2b84b; --failed:#f0675a;
+    --benign:#5b9bd5; --real:#f0675a; --soft:#b07cd6;
+    --accent:#3ecf8e;
+    --mono:'SF Mono',ui-monospace,'Cascadia Code',Menlo,Consolas,monospace;
+    --sans:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  body{background:var(--bg);color:var(--ink);font-family:var(--sans);
+    font-size:15px;line-height:1.55;-webkit-font-smoothing:antialiased;
+    background-image:radial-gradient(circle at 50% -10%,rgba(62,207,142,.05),transparent 55%);}
+  @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+
+  /* ---- top bar ---- */
+  .topbar{display:flex;align-items:center;justify-content:space-between;
+    padding:18px 28px;border-bottom:1px solid var(--line);
+    position:sticky;top:0;background:rgba(14,20,25,.85);backdrop-filter:blur(10px);z-index:30}
+  .brand{display:flex;align-items:center;gap:12px}
+  .brand .glyph{width:30px;height:30px;border:1.5px solid var(--accent);border-radius:6px;
+    display:grid;place-items:center;font-family:var(--mono);font-size:13px;color:var(--accent);font-weight:700}
+  .brand h1{font-size:15px;font-weight:600;letter-spacing:.02em}
+  .brand .sub{font-family:var(--mono);font-size:11px;color:var(--ink-faint);letter-spacing:.06em;text-transform:uppercase}
+  .demo-switch{display:flex;gap:6px;background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:4px}
+  .demo-switch button{font-family:var(--mono);font-size:11px;letter-spacing:.04em;
+    background:transparent;color:var(--ink-dim);border:none;padding:7px 12px;border-radius:5px;cursor:pointer;transition:.15s}
+  .demo-switch button.on{background:var(--panel2);color:var(--ink)}
+  .demo-switch button:hover{color:var(--ink)}
+
+  .wrap{max-width:980px;margin:0 auto;padding:28px 24px 120px}
+
+  /* ---- upload zone (shown initially) ---- */
+  .drop{border:1.5px dashed var(--line);border-radius:14px;padding:48px 32px;text-align:center;
+    background:var(--panel);margin-bottom:26px;transition:.2s}
+  .drop:hover{border-color:var(--accent);background:var(--panel2)}
+  .drop .big{font-size:17px;font-weight:600;margin-bottom:6px}
+  .drop .sm{color:var(--ink-dim);font-size:13px}
+  .drop .or{font-family:var(--mono);font-size:11px;color:var(--ink-faint);margin-top:14px;letter-spacing:.05em}
+
+  /* ---- verdict hero ---- */
+  .verdict{border-radius:16px;padding:0;overflow:hidden;border:1px solid var(--line);
+    margin-bottom:22px;animation:rise .4s ease both}
+  @keyframes rise{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+  .verdict .band{padding:24px 28px;display:flex;align-items:center;gap:20px;position:relative}
+  .verdict .band::before{content:"";position:absolute;left:0;top:0;bottom:0;width:5px}
+  .v-clean .band::before{background:var(--clean)}
+  .v-review .band::before{background:var(--review)}
+  .v-failed .band::before{background:var(--failed)}
+  .v-clean .band{background:linear-gradient(90deg,rgba(62,207,142,.12),transparent)}
+  .v-review .band{background:linear-gradient(90deg,rgba(242,184,75,.12),transparent)}
+  .v-failed .band{background:linear-gradient(90deg,rgba(240,103,90,.12),transparent)}
+  .v-dot{width:46px;height:46px;border-radius:50%;display:grid;place-items:center;flex:none;
+    font-size:22px;font-weight:700}
+  .v-clean .v-dot{background:rgba(62,207,142,.16);color:var(--clean);border:1.5px solid var(--clean)}
+  .v-review .v-dot{background:rgba(242,184,75,.16);color:var(--review);border:1.5px solid var(--review)}
+  .v-failed .v-dot{background:rgba(240,103,90,.16);color:var(--failed);border:1.5px solid var(--failed)}
+  .v-text .label{font-family:var(--mono);font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-faint)}
+  .v-text .head{font-size:21px;font-weight:700;margin-top:2px}
+  .v-clean .v-text .head{color:var(--clean)}
+  .v-review .v-text .head{color:var(--review)}
+  .v-failed .v-text .head{color:var(--failed)}
+  .v-text .one{color:var(--ink-dim);font-size:13.5px;margin-top:3px;max-width:62ch}
+
+  /* provenance strip */
+  .prov{display:flex;flex-wrap:wrap;gap:0;border-top:1px solid var(--line);background:var(--panel)}
+  .prov div{padding:11px 20px;border-right:1px solid var(--line);flex:1;min-width:130px}
+  .prov .k{font-family:var(--mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-faint)}
+  .prov .val{font-size:13px;color:var(--ink);margin-top:2px;font-weight:500}
+  .prov .flag{color:var(--review)}
+
+  /* ---- counts row ---- */
+  .counts{display:flex;gap:12px;margin-bottom:24px}
+  .count{flex:1;background:var(--panel);border:1px solid var(--line);border-radius:11px;padding:14px 16px}
+  .count .n{font-size:24px;font-weight:700;font-family:var(--mono)}
+  .count .t{font-size:11.5px;color:var(--ink-dim);margin-top:1px;letter-spacing:.02em}
+  .count.real .n{color:var(--real)} .count.soft .n{color:var(--soft)}
+  .count.benign .n{color:var(--benign)} .count.pass .n{color:var(--clean)}
+
+  /* ---- findings ---- */
+  .sec-h{font-family:var(--mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;
+    color:var(--ink-faint);margin:26px 0 12px;display:flex;align-items:center;gap:10px}
+  .sec-h::after{content:"";height:1px;background:var(--line);flex:1}
+
+  .find{background:var(--panel);border:1px solid var(--line);border-radius:11px;padding:0;
+    margin-bottom:10px;overflow:hidden}
+  .find summary{padding:15px 18px;cursor:pointer;display:flex;align-items:center;gap:14px;list-style:none;outline:none}
+  .find summary::-webkit-details-marker{display:none}
+  .tag{font-family:var(--mono);font-size:9.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;
+    padding:4px 8px;border-radius:5px;flex:none;white-space:nowrap}
+  .tag.real{background:rgba(240,103,90,.15);color:var(--real)}
+  .tag.soft{background:rgba(176,124,214,.15);color:var(--soft)}
+  .tag.benign{background:rgba(91,155,213,.15);color:var(--benign)}
+  .find .m-name{font-weight:600;font-size:14px;flex:1}
+  .find .m-val{font-family:var(--mono);font-size:12.5px;color:var(--ink-dim);flex:none}
+  .find .m-val b{color:var(--ink)}
+  .find .chev{color:var(--ink-faint);font-size:11px;transition:.2s;flex:none}
+  .find[open] .chev{transform:rotate(90deg)}
+  .find .body{padding:0 18px 16px 18px;border-top:1px solid var(--line);margin-top:0;
+    color:var(--ink-dim);font-size:13.5px;line-height:1.6}
+  .find .body .row{display:flex;gap:10px;margin-top:11px}
+  .find .body .row .lab{font-family:var(--mono);font-size:10px;letter-spacing:.06em;text-transform:uppercase;
+    color:var(--ink-faint);width:92px;flex:none;padding-top:2px}
+  .find .body .row .txt{flex:1;color:var(--ink)}
+
+  /* ---- chat drawer ---- */
+  .ask-fab{position:fixed;bottom:26px;right:26px;background:var(--accent);color:#06120c;
+    border:none;border-radius:30px;padding:14px 22px;font-size:14px;font-weight:600;cursor:pointer;
+    box-shadow:0 8px 24px rgba(62,207,142,.3);display:flex;align-items:center;gap:9px;z-index:40;transition:.2s}
+  .ask-fab:hover{transform:translateY(-2px)}
+  .drawer{position:fixed;top:0;right:-440px;width:420px;max-width:92vw;height:100vh;
+    background:var(--panel);border-left:1px solid var(--line);z-index:50;display:flex;flex-direction:column;
+    transition:right .28s cubic-bezier(.4,0,.2,1)}
+  .drawer.open{right:0}
+  .drawer-h{padding:18px 20px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between}
+  .drawer-h .t{font-weight:600;font-size:15px}
+  .drawer-h .t span{font-family:var(--mono);font-size:11px;color:var(--ink-faint);display:block;margin-top:1px}
+  .drawer-h button{background:none;border:none;color:var(--ink-dim);font-size:22px;cursor:pointer;line-height:1}
+  .chat{flex:1;overflow-y:auto;padding:18px 20px;display:flex;flex-direction:column;gap:14px}
+  .msg{max-width:88%;padding:11px 14px;border-radius:12px;font-size:13.5px;line-height:1.55}
+  .msg.bot{background:var(--panel2);border:1px solid var(--line);align-self:flex-start;border-bottom-left-radius:4px}
+  .msg.user{background:rgba(62,207,142,.14);border:1px solid rgba(62,207,142,.25);align-self:flex-end;border-bottom-right-radius:4px}
+  .msg.bot b{color:var(--accent)}
+  .suggestions{display:flex;flex-wrap:wrap;gap:7px;padding:0 20px 12px}
+  .suggestions button{font-size:11.5px;background:var(--panel2);border:1px solid var(--line);color:var(--ink-dim);
+    padding:7px 11px;border-radius:14px;cursor:pointer;transition:.15s;text-align:left}
+  .suggestions button:hover{border-color:var(--accent);color:var(--ink)}
+  .chat-in{padding:14px 16px;border-top:1px solid var(--line);display:flex;gap:8px}
+  .chat-in input{flex:1;background:var(--bg);border:1px solid var(--line);border-radius:9px;
+    padding:11px 13px;color:var(--ink);font-size:13.5px;font-family:var(--sans);outline:none}
+  .chat-in input:focus{border-color:var(--accent)}
+  .chat-in button{background:var(--accent);color:#06120c;border:none;border-radius:9px;padding:0 16px;font-weight:600;cursor:pointer}
+  .scrim{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:45;opacity:0;pointer-events:none;transition:.28s}
+  .scrim.show{opacity:1;pointer-events:auto}
+
+  .note{font-family:var(--mono);font-size:10.5px;color:var(--ink-faint);text-align:center;margin-top:30px;letter-spacing:.03em}
+  .hidden{display:none}
+</style>
+</head>
+<body>
+  <div class="topbar">
+    <div class="brand">
+      <div class="glyph">◇</div>
+      <div>
+        <h1>CHIPS Triage</h1>
+        <div class="sub">Phantom QC · Report Interpreter</div>
+      </div>
+    </div>
+    <div class="demo-switch">
+      <button id="b-vida" class="on" onclick="load('vida')">DEMO · Vida 3T</button>
+      <button id="b-sola" onclick="load('sola')">DEMO · Sola 1.5T</button>
+    </div>
+  </div>
+
+  <div class="wrap">
+    <div class="drop" onclick="document.getElementById('b-vida').click()">
+      <div class="big">Drop a CHIPS report to triage</div>
+      <div class="sm">PDF report, or a structured dashboard summary from the pipeline</div>
+      <div class="or">— OR TRY A DEMO REPORT ABOVE —</div>
+    </div>
+
+    <div id="result"></div>
+
+    <div class="note">Prototype · verdict logic from the CHIPS pipeline thresholds · hypotheses, not certified diagnoses</div>
+  </div>
+
+  <button class="ask-fab" id="fab" onclick="openDrawer()">💬 Ask about this report</button>
+
+  <div class="scrim" id="scrim" onclick="closeDrawer()"></div>
+  <div class="drawer" id="drawer">
+    <div class="drawer-h">
+      <div class="t">Ask the triage assistant<span id="drawer-sub">vachips_1017_102</span></div>
+      <button onclick="closeDrawer()">×</button>
+    </div>
+    <div class="chat" id="chat"></div>
+    <div class="suggestions" id="suggestions"></div>
+    <div class="chat-in">
+      <input id="chatInput" placeholder="Ask why a metric failed…" onkeydown="if(event.key==='Enter')send()">
+      <button onclick="send()">→</button>
+    </div>
+  </div>
+
+<script>
+/* ---------- demo data: distilled from the two real reports ---------- */
+const REPORTS = {
+  vida:{
+    id:"vachips_1017_102", scanner:"MAGNETOM Vida", field:"3.0T", vendor:"SIEMENS",
+    site:"Salt_Lake_City_HSC", date:"2025-Jun-07", temp:"74°F room · 15 min acclim.", tempFlag:true,
+    verdict:"review", vhead:"Review — low priority",
+    vone:"Acquisition is fundamentally sound. The red flags are benign confounders (temperature, provisional thresholds) — no real acquisition or pipeline failure detected.",
+    counts:{real:0, soft:1, benign:7, pass:14},
+    findings:[
+      {tag:"soft", name:"MPRAGE density-cube monotonicity", val:"<b>8</b> / 9", title:"One cube out of expected order",
+        cause:"Likely registration / partial-volume effect on a single density cube, not a data fault.",
+        check:"Inspect the MPRAGE→aniso-disk registration diagnostic image for that cube.", weight:"Minor. 1mm cubes already excluded; one 2–6mm cube off."},
+      {tag:"benign", name:"T2 relaxometry MAPE", val:"<b>8.2%</b> vs ≤5%", title:"Scale offset, correlation perfect (r=1.000)",
+        cause:"Temperature above the 20°C reference plus short (15 min) acclimation. Correlation ~1.0 means the shape is right, only the scale is shifted.",
+        check:"Confirm room/bore temperature; longer acclimation for quantitative comparison.", weight:"Benign. Field strength matches reference (3T), so this is not a field artifact."},
+      {tag:"benign", name:"PD linearity MAPE", val:"<b>18.7%</b> vs ≤5%", title:"Worst-hit by known uncorrected effect",
+        cause:"Spatial inhomogeneity across the axial slice — the pipeline does not correct for this yet — compounded by temperature.",
+        check:"Visual: check for intensity gradient across the fluid slice.", weight:"Benign / known limitation. Correlation still 0.990."},
+      {tag:"benign", name:"ADC (PVP) MAPE", val:"<b>6.1%</b> vs ≤5%", title:"Just over threshold, anchor metric",
+        cause:"Temperature offset from the 19.5°C ADC reference. ADC is field- and vendor-neutral, so a small miss here is almost always temperature.",
+        check:"Temperature log. Correlation 0.999 — the anchor is healthy.", weight:"Benign. This is the trustworthy cross-site metric and it essentially passed."},
+      {tag:"benign", name:"Vertical-bar FA min / CV", val:"<b>0.318</b> · <b>49%</b>", title:"Provisional thresholds, marginal",
+        cause:"FA min 0.318 vs 0.350 and CV vs 25% are PROVISIONAL thresholds that will move with population norms. CV is inherently noisy on single-voxel ROIs.",
+        check:"Compare against site's own longitudinal norm once available.", weight:"Low. Spatial-homogeneity TRACT counts all passed (21/21, 4/4, 4/4) — the disk is healthy."},
+      {tag:"benign", name:"4mm-100% density FA", val:"<b>0.191</b> vs 0.200", title:"Provisional threshold, trivially under",
+        cause:"0.009 below a provisional floor. The other three FA cubes pass.",
+        check:"Provisional — not a hard limit.", weight:"Negligible."},
+      {tag:"benign", name:"Geometry LCOD detection", val:"<b>9</b> / 12", title:"Low-contrast count below target",
+        cause:"Possible slice-prescription bleed from the adjacent serial plate, or genuine low-contrast limit. HCSR resolution passed 14/14.",
+        check:"Geometry-disk slice prescription on the funnel fiducial.", weight:"Minor. High-contrast resolution is perfect."},
+      {tag:"benign", name:"Protocol exceptions", val:"present", title:"Mixed — mostly benign noise",
+        cause:"Recurring 16° PA b-vector flag (appears in healthy AND failing scans — a spec-comparison artifact) and a valid 64-ch coil flagged against a 20-ch spec list. Real but tolerated: diffusion TE 95 vs 74.",
+        check:"Widen the expected coil spec list to remove false flags. Note TE deviation for protocol correction.", weight:"Mostly benign. None broke the diffusion results."},
+    ]
+  },
+  sola:{
+    id:"vachips_1014_101", scanner:"MAGNETOM Sola", field:"1.5T", vendor:"SIEMENS",
+    site:"Salt_Lake_City_HSC", date:"2025-Mar-05", temp:"70°F room · >1 hr", tempFlag:false,
+    verdict:"failed", vhead:"Review — real issue found",
+    vone:"A genuine spatial-homogeneity failure sits behind the relaxometry noise. Relaxometry failures are largely a 1.5T-vs-3T-table artifact, but the diffusion structure has collapsed — that part is real.",
+    counts:{real:1, soft:0, benign:3, pass:9},
+    findings:[
+      {tag:"real", name:"Spatial-homogeneity collapse", val:"H <b>0/4</b> · V <b>2/4</b> · Z <b>13/21</b>", title:"Genuine acquisition / setup problem",
+        cause:"Wrong matrix (108 vs 90), partial coil string, b-vectors 16° off — and FA min 0.115 (vs 0.35), CV 53%. This is NOT explained by field strength.",
+        check:"Slice prescription on centerline fiducials; coil seating; matrix/FOV; gradient table; shim.", weight:"HIGH. This is the real failure. The whole verdict hinges on this, not on the count of red flags."},
+      {tag:"benign", name:"T1 relaxometry MAPE", val:"<b>31.6%</b> vs ≤5%", title:"1.5T scored against 3T table",
+        cause:"The pipeline defaults to 3T reference values and does not adjust for field strength. T1 shortens most at 1.5T, so T1 is worst-hit.",
+        check:"Field strength is 1.5T (Provenance). Expected artifact, not a scanner fault.", weight:"Benign. Do not alarm on this."},
+      {tag:"benign", name:"T2 / PD MAPE", val:"<b>60.6%</b> · <b>12.2%</b>", title:"Same field-strength artifact",
+        cause:"Relaxometry references are 3T; this is a 1.5T scan. Correlation on T2 still 0.997.",
+        check:"Confirm 1.5T. Benign comparison artifact.", weight:"Benign."},
+      {tag:"benign", name:"ADC (PVP) anchor", val:"r=<b>0.999</b>", title:"Anchor HELD — acquisition core is sound",
+        cause:"Water diffusion in PVP is field- and vendor-independent. A near-perfect anchor confirms the core acquisition wasn't fundamentally broken — the problem is localized to spatial homogeneity + protocol.",
+        check:"Nothing — this is the evidence that isolates the real problem.", weight:"Diagnostic anchor. This is WHY we can say relaxometry failures are benign and the spatial-homogeneity failure is the real story."},
+    ]
+  }
+};
+
+const SUGGEST = {
+  vida:["Why did T2 and PD fail if the scanner is fine?","Is the 16° b-vector flag a problem?","Should I worry about the FA threshold misses?"],
+  sola:["What's the actual problem with this scan?","Why is T1 so much worse than the others?","How do you know it's not the scanner?"]
+};
+/* canned answers so the prototype feels alive offline */
+const ANSWERS = {
+  "why did t2 and pd fail if the scanner is fine":"Because the failures are a <b>scale offset, not a shape error</b>. The correlation to reference is ~1.000 — the values track the reference curve perfectly, they're just shifted. That signature points to <b>temperature</b> (74°F ≈ 23°C vs the 20°C reference) and only 15 min of acclimation, plus the known uncorrected PD slice inhomogeneity. The field strength is 3T, matching the table, so this is not a field artifact and not a hardware fault.",
+  "is the 16° b-vector flag a problem":"Almost certainly <b>not</b>. That same 16° flag on the reverse-phase series appears in <b>both</b> this healthy scan and the failing Sola scan, and here the diffusion results pass cleanly (tracts 21/21, 4/4, 4/4). If it were corrupting the gradient table, tractography would fail. It reads as a <b>spec-comparison artifact</b> in how the PA b-vectors compare to the siemens_bvectors_64 reference — worth noting, not worth chasing.",
+  "should i worry about the fa threshold misses":"<b>No.</b> The FA misses (4mm-100% at 0.191 vs 0.200; vertical-bar min 0.318 vs 0.350) are against <b>provisional thresholds</b> that will move as CHIPS collects population norms — they're not hard physical limits. More importantly, the spatial-homogeneity <b>tract counts</b> all passed, which is the real health signal for that disk.",
+  "what's the actual problem with this scan":"The real problem is a <b>spatial-homogeneity collapse</b>: 0 of 4 horizontal, 2 of 4 vertical, 13 of 21 Z tracts, with vertical-bar FA min 0.115 and CV 53%. Alongside protocol exceptions (matrix 108 vs 90, b-vectors 16° off, partial coil string), this points to a <b>real acquisition/setup issue</b> — slice prescription, coil seating, matrix/FOV, or gradient table. The relaxometry red flags are a separate, benign 1.5T-vs-3T story.",
+  "why is t1 so much worse than the others":"Because <b>T1 shortens most as field strength drops</b>. This is a 1.5T scan scored against the pipeline's 3T reference table (it doesn't adjust for field yet), so every relaxometry metric is offset — but T1 the most. That's why T1 MAPE is 31.6% while the field-independent ADC anchor stays at r=0.999.",
+  "how do you know it's not the scanner":"The <b>ADC/PVP anchor</b>. Water diffusion in PVP is a physical constant, independent of field strength and vendor. Its correlation is 0.999 here — if the scanner core were broken, that would fail too. So the acquisition core is sound; the failure is <b>localized</b> to spatial homogeneity and protocol, which is a setup/acquisition problem, not a hardware fault."
+};
+
+let current='vida';
+
+function load(which){
+  current=which;
+  document.getElementById('b-vida').classList.toggle('on',which==='vida');
+  document.getElementById('b-sola').classList.toggle('on',which==='sola');
+  const r=REPORTS[which];
+  const vc = r.verdict==='clean'?'v-clean':r.verdict==='review'?'v-review':'v-failed';
+  const icon = r.verdict==='failed'?'!':r.verdict==='review'?'~':'✓';
+
+  let findReal = r.findings.filter(f=>f.tag==='real'||f.tag==='soft');
+  let findBenign = r.findings.filter(f=>f.tag==='benign');
+
+  const findHtml = (arr)=>arr.map(f=>`
+    <details class="find">
+      <summary>
+        <span class="tag ${f.tag}">${f.tag==='real'?'Real':f.tag==='soft'?'Software?':'Benign'}</span>
+        <span class="m-name">${f.name}</span>
+        <span class="m-val">${f.val}</span>
+        <span class="chev">▶</span>
+      </summary>
+      <div class="body">
+        <div style="margin-top:13px;color:var(--ink);font-weight:500">${f.title}</div>
+        <div class="row"><div class="lab">Likely cause</div><div class="txt">${f.cause}</div></div>
+        <div class="row"><div class="lab">What to check</div><div class="txt">${f.check}</div></div>
+        <div class="row"><div class="lab">Weight</div><div class="txt">${f.weight}</div></div>
+      </div>
+    </details>`).join('');
+
+  document.getElementById('result').innerHTML=`
+    <div class="verdict ${vc}">
+      <div class="band">
+        <div class="v-dot">${icon}</div>
+        <div class="v-text">
+          <div class="label">${r.id}</div>
+          <div class="head">${r.vhead}</div>
+          <div class="one">${r.vone}</div>
+        </div>
+      </div>
+      <div class="prov">
+        <div><div class="k">Scanner</div><div class="val">${r.scanner}</div></div>
+        <div><div class="k">Field</div><div class="val">${r.field}</div></div>
+        <div><div class="k">Site</div><div class="val">${r.site}</div></div>
+        <div><div class="k">Temp / Acclim.</div><div class="val ${r.tempFlag?'flag':''}">${r.temp}</div></div>
+      </div>
+    </div>
+
+    <div class="counts">
+      <div class="count real"><div class="n">${r.counts.real}</div><div class="t">Real issue</div></div>
+      <div class="count soft"><div class="n">${r.counts.soft}</div><div class="t">Possible software</div></div>
+      <div class="count benign"><div class="n">${r.counts.benign}</div><div class="t">Benign / context</div></div>
+      <div class="count pass"><div class="n">${r.counts.pass}</div><div class="t">Passed</div></div>
+    </div>
+
+    ${findReal.length?`<div class="sec-h">Action items — weighted, not counted</div>${findHtml(findReal)}`:''}
+    <div class="sec-h">Context — not action items</div>
+    ${findHtml(findBenign)}
+  `;
+
+  // reset chat
+  document.getElementById('drawer-sub').textContent=r.id;
+  document.getElementById('chat').innerHTML=`<div class="msg bot">I have triaged <b>${r.id}</b>. ${r.verdict==='failed'?'There is one real issue worth your attention; the rest is benign context.':'No real problems &mdash; the red flags are benign confounders. Ask me about any of them.'}</div>`;
+  document.getElementById('suggestions').innerHTML=SUGGEST[which].map(s=>`<button data-q="${s.replace(/"/g,'&quot;')}" onclick="ask(this.dataset.q)">${s}</button>`).join('');
+}
+
+function openDrawer(){document.getElementById('drawer').classList.add('open');document.getElementById('scrim').classList.add('show');}
+function closeDrawer(){document.getElementById('drawer').classList.remove('open');document.getElementById('scrim').classList.remove('show');}
+
+function pushMsg(text,who){
+  const c=document.getElementById('chat');
+  const d=document.createElement('div');d.className='msg '+who;d.innerHTML=text;c.appendChild(d);
+  c.scrollTop=c.scrollHeight;
+}
+function ask(q){openDrawer();pushMsg(q,'user');respond(q);}
+function send(){const i=document.getElementById('chatInput');if(!i.value.trim())return;const q=i.value;i.value='';pushMsg(q,'user');respond(q);}
+function respond(q){
+  const key=q.toLowerCase().replace(/[?.]/g,'').trim();
+  let a=ANSWERS[key];
+  if(!a){
+    // fuzzy: find best keyword overlap
+    let best=null,score=0;
+    for(const k in ANSWERS){const o=k.split(' ').filter(w=>key.includes(w)).length;if(o>score){score=o;best=k;}}
+    a = score>=2 ? ANSWERS[best] : "In the full version I'd answer this from the report data and the CHIPS knowledge base. This prototype has canned answers for the suggested questions — try one of those to see the interaction.";
+  }
+  setTimeout(()=>pushMsg(a,'bot'),350);
+}
+
+load('vida');
+</script>
+</body>
+</html>
