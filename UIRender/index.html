@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sudhir Pathak — UI Renders</title>
+<style>
+  :root{
+    --card:#ffffff; --text:#1e293b; --muted:#64748b;
+    --accent:#7c3aed; --accent-soft:#f3e8ff; --border:#e2e8f0;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    background:linear-gradient(135deg,#1e1b4b 0%,#7c3aed 140%);
+    color:var(--text); min-height:100vh; padding:6vh 6vw;
+  }
+  header{max-width:900px;margin:0 auto 2.5rem;color:#fff;}
+  header .kicker{
+    display:inline-block;font-size:.8rem;letter-spacing:.12em;text-transform:uppercase;
+    background:rgba(255,255,255,.15);padding:.35em .9em;border-radius:999px;
+    font-weight:600;margin-bottom:1rem;
+  }
+  header h1{font-size:clamp(1.8rem,4vw,2.8rem);margin-bottom:.25em;}
+  header .subtitle{color:#e9d5ff;font-size:1.15rem;font-weight:500;margin-bottom:.9em;}
+  header p{color:#ddd6fe;font-size:1.05rem;max-width:62ch;}
+  header code{background:rgba(255,255,255,.16);padding:.1em .4em;border-radius:5px;font-size:.92em;}
+
+  .grid{
+    max-width:900px;margin:0 auto;
+    display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:1.1rem;
+  }
+  .card{
+    display:flex;flex-direction:column;
+    background:var(--card);border:1px solid var(--border);border-radius:14px;
+    padding:1.3rem 1.4rem;text-decoration:none;color:inherit;
+    transition:transform .15s ease, box-shadow .15s ease;
+    box-shadow:0 1px 3px rgba(0,0,0,.08);
+  }
+  .card:hover{transform:translateY(-3px);box-shadow:0 10px 28px rgba(0,0,0,.18);}
+  .card .icon{
+    width:40px;height:40px;border-radius:10px;background:var(--accent-soft);
+    display:flex;align-items:center;justify-content:center;font-size:1.3rem;margin-bottom:.9rem;
+  }
+  .card h2{font-size:1.15rem;line-height:1.25;margin-bottom:.35rem;word-break:break-word;}
+  .card .note{font-size:.92rem;color:var(--muted);line-height:1.45;margin-bottom:.6rem;}
+  .card .open{color:var(--accent);font-weight:600;font-size:.9rem;}
+  .card .meta{font-size:.8rem;color:#94a3b8;margin-top:auto;padding-top:.7rem;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;}
+
+  .state{max-width:900px;margin:0 auto;color:#ede9fe;font-size:1rem;padding:2rem 0;}
+  .state a{color:#fff;}
+  footer{max-width:900px;margin:3rem auto 0;color:#c4b5fd;font-size:.82rem;text-align:center;}
+</style>
+</head>
+<body>
+  <header>
+    <span class="kicker">skpathak.github.io / UIRender</span>
+    <h1 id="title">UI Renders</h1>
+    <div class="subtitle" id="subtitle"></div>
+    <p id="intro"></p>
+  </header>
+
+  <div class="grid" id="grid"></div>
+  <div class="state" id="state">Loading UIs&hellip;</div>
+  <footer id="footer"></footer>
+
+<script>
+  // ---- Repo config ----
+  const OWNER  = "skpathak";
+  const REPO   = "skpathak.github.io";
+  const FOLDER = "UIRender";
+  const BRANCH = "master";
+  const MD     = "content.md";
+
+  const grid  = document.getElementById('grid');
+  const state = document.getElementById('state');
+
+  function esc(s){ return s.replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+  function inline(s){
+    return esc(s).replace(/`([^`]+)`/g,'<code>$1</code>').replace(/\*\*([^*]+)\*\*/g,'<strong>$1</strong>');
+  }
+  function prettyName(name){
+    return name.replace(/[_-]+/g,' ').replace(/\s+/g,' ').trim().replace(/\b\w/g,c=>c.toUpperCase());
+  }
+
+  // Parse content.md -> {title, subtitle, intro, notes:{foldername:note}}  (directory-based: names have no extension)
+  function parseMd(md){
+    const out={title:'',subtitle:'',intro:'',notes:{}};
+    const lines=md.split(/\r?\n/); let introLines=[],sawHeading2=false;
+    for(const raw of lines){
+      const line=raw.trim();
+      if(/^#\s+/.test(line)&&!out.title){ out.title=line.replace(/^#\s+/,''); continue; }
+      if(/^##\s+/.test(line)){ sawHeading2=true; continue; }
+      if(/^>\s?/.test(line)&&!out.subtitle){ out.subtitle=line.replace(/^>\s?/,''); continue; }
+      const m=line.match(/^[-*]\s+(.+)$/);
+      if(m){
+        // Skip the "Format: ..." helper line (contains a colon-led instruction, not a real folder mapping)
+        if(/^format\b/i.test(m[1])) continue;
+        let body=m[1].trim(), name, note='';
+        const bt=body.match(/^`([^`]+)`\s*(.*)$/);
+        if(bt){ name=bt[1].trim(); note=bt[2]; }
+        else{
+          const sep=body.search(/\s[—–-]\s|:\s/);
+          if(sep>=0){ name=body.slice(0,sep).trim(); note=body.slice(sep); }
+          else{ name=body.trim(); }
+        }
+        note=note.replace(/^[\s—–:-]+/,'').trim();
+        if(name) out.notes[name.toLowerCase()]=note;
+        continue;
+      }
+      if(!sawHeading2 && line && !/^>/.test(line)) introLines.push(line);
+    }
+    out.intro=introLines.join(' ');
+    return out;
+  }
+
+  async function fetchMd(){
+    try{ const r=await fetch('./'+MD,{cache:'no-store'}); if(r.ok) return await r.text(); }catch(e){}
+    try{
+      const r=await fetch(`https://raw.githubusercontent.com/${OWNER}/${REPO}/${BRANCH}/${FOLDER}/${MD}`,{cache:'no-store'});
+      if(r.ok) return await r.text();
+    }catch(e){}
+    return null;
+  }
+
+  async function fetchDirs(){
+    const res=await fetch(`https://api.github.com/repos/${OWNER}/${REPO}/contents/${FOLDER}`,
+                          { headers:{ 'Accept':'application/vnd.github+json' }});
+    if(!res.ok) throw new Error('GitHub API '+res.status);
+    const items=await res.json();
+    // DIRECTORY-BASED: list folders only
+    return items.filter(f => f.type==='dir').sort((a,b)=>a.name.localeCompare(b.name));
+  }
+
+  async function load(){
+    const [md, dirsResult] = await Promise.allSettled([fetchMd(), fetchDirs()]);
+
+    let notes={};
+    if(md.status==='fulfilled' && md.value){
+      const c=parseMd(md.value);
+      if(c.title)    document.getElementById('title').textContent=c.title;
+      if(c.subtitle) document.getElementById('subtitle').innerHTML=inline(c.subtitle);
+      if(c.intro)    document.getElementById('intro').innerHTML=inline(c.intro);
+      notes=c.notes;
+    }
+
+    if(dirsResult.status!=='fulfilled'){
+      state.innerHTML='Could not load the folder list ('+dirsResult.reason.message+'). '
+        +'Browse directly on <a href="https://github.com/'+OWNER+'/'+REPO+'/tree/'+BRANCH+'/'+FOLDER+'">GitHub</a>.'
+        +'<br><br><em>The GitHub API allows 60 requests/hour without sign-in — wait a bit and reload if needed.</em>';
+      return;
+    }
+    const dirs=dirsResult.value;
+    if(dirs.length===0){
+      state.innerHTML='No UIs yet. Create a <strong>folder</strong> containing an <code>index.html</code> inside <code>'+FOLDER+'/</code> to get started.';
+      return;
+    }
+
+    state.style.display='none';
+    grid.innerHTML=dirs.map(d=>{
+      const note=notes[d.name.toLowerCase()];
+      return `
+        <a class="card" href="./${encodeURIComponent(d.name)}/">
+          <div class="icon">&#128421;</div>
+          <h2>${esc(prettyName(d.name))}</h2>
+          ${note?`<div class="note">${inline(note)}</div>`:''}
+          <div class="open">Open &rarr;</div>
+          <div class="meta">${esc(d.name)}/</div>
+        </a>`;
+    }).join('');
+
+    document.getElementById('footer').textContent=dirs.length+(dirs.length===1?' UI':' UIs');
+  }
+  load();
+</script>
+</body>
+</html>
