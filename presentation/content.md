@@ -12,3 +12,4 @@ Files without a note still show up; they just won't have a description.
 
 - HM-MRI_Identifiability.html — HM-MRI identifiability analysis and results.
 - qsm_modeling.html - Quantitative Susceptibility Mapping — From Phase to χ
+- phantom_explorer.html — Phantom Semantics Console (PST-102228) — interactive phantom explorer.

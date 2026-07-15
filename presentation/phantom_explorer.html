@@ -1,0 +1,4547 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PST-102228 · Phantom Semantics Console</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#EDF1F3; --panel:#FFFFFF; --panel2:#F6F9FA;
+  --ink:#16232A; --ink2:#46585F; --ink3:#7C8C92;
+  --line:#DBE3E7; --line2:#C3D0D5;
+  --teal:#0E7C86; --teal-ink:#0B5A61; --teal-bg:#E1F1F2;
+  --amber:#A8620A; --amber-bg:#F5EAD8;
+  --alert:#B33A1A; --alert-bg:#F6E2DB;
+  --f-display:'Space Grotesk',system-ui,sans-serif;
+  --f-body:'Inter',system-ui,sans-serif;
+  --f-mono:'IBM Plex Mono',ui-monospace,monospace;
+}
+@media (prefers-color-scheme:dark){:root{
+  --bg:#0F1619; --panel:#172227; --panel2:#1C2A30;
+  --ink:#E7EEF0; --ink2:#A9B8BD; --ink3:#72858B;
+  --line:#26343A; --line2:#35474E;
+  --teal:#40B7C0; --teal-ink:#8FD8DC; --teal-bg:#123037;
+  --amber:#E0A44A; --amber-bg:#2C2412;
+  --alert:#E08161; --alert-bg:#331A10;
+}}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.6;-webkit-font-smoothing:antialiased}
+.mono{font-family:var(--f-mono)}
+a{color:var(--teal)}
+
+/* header */
+.top{position:sticky;top:0;z-index:20;background:var(--panel);border-bottom:1px solid var(--line2);padding:14px 24px;display:flex;flex-wrap:wrap;align-items:baseline;gap:6px 20px}
+.top .id{font-family:var(--f-mono);font-size:12px;letter-spacing:.14em;color:var(--teal);text-transform:uppercase}
+.top h1{font-family:var(--f-display);font-weight:700;font-size:19px;margin:0;letter-spacing:-.01em}
+.top .maker{color:var(--ink3);font-size:13px}
+.stats{margin-left:auto;display:flex;gap:18px;font-family:var(--f-mono);font-size:12px;color:var(--ink2)}
+.stats b{color:var(--ink);font-weight:500}
+
+.wrap{display:grid;grid-template-columns:236px 1fr;gap:0;align-items:start}
+
+/* spine (signature) */
+.spine{position:sticky;top:64px;align-self:start;padding:22px 16px 22px 24px;height:calc(100vh - 64px);overflow:auto}
+.spine .lab{font-family:var(--f-mono);font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--ink3);margin:0 0 10px 2px}
+.stack{position:relative}
+.dome{display:block;margin:0 auto -1px;filter:drop-shadow(0 1px 0 var(--line2))}
+.seg{display:block;width:100%;text-align:left;border:1px solid var(--line2);border-top:none;background:var(--panel);color:var(--ink);
+  padding:11px 12px;cursor:pointer;font-family:var(--f-display);font-weight:600;font-size:13.5px;letter-spacing:-.01em;position:relative;transition:background .12s}
+.seg:first-of-type{border-top:1px solid var(--line2)}
+.seg:hover{background:var(--panel2)}
+.seg .band{display:block;font-family:var(--f-mono);font-weight:400;font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink3);margin-top:3px}
+.seg .n{position:absolute;right:11px;top:11px;font-family:var(--f-mono);font-size:11px;color:var(--ink3)}
+.seg.active{background:var(--teal-bg);border-color:var(--teal);z-index:2}
+.seg.active::before{content:"";position:absolute;left:-1px;top:-1px;bottom:-1px;width:3px;background:var(--teal)}
+.seg.active .n{color:var(--teal-ink)}
+.opt{font-family:var(--f-mono);font-size:9px;color:var(--amber);border:1px solid var(--amber);border-radius:3px;padding:0 3px;margin-left:6px;vertical-align:middle;letter-spacing:.08em}
+.base{height:14px;background:var(--line2);width:calc(100% + 8px);margin:-1px -4px 0;border-radius:0 0 4px 4px}
+.legend{margin-top:18px;font-size:11px;color:var(--ink2);line-height:1.9}
+.legend .k{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:6px;vertical-align:middle}
+
+/* detail */
+.detail{padding:24px 28px 90px;min-width:0}
+.dhead{display:flex;flex-wrap:wrap;align-items:baseline;gap:8px 14px;margin-bottom:4px}
+.dhead h2{font-family:var(--f-display);font-weight:700;font-size:26px;letter-spacing:-.02em;margin:0}
+.src{font-family:var(--f-mono);font-size:11px;color:var(--ink3);border:1px solid var(--line2);border-radius:4px;padding:1px 7px}
+.metrics{display:flex;flex-wrap:wrap;gap:6px;margin:12px 0 18px}
+.metric{font-family:var(--f-mono);font-size:11px;color:var(--ink2);background:var(--panel2);border:1px solid var(--line);border-radius:4px;padding:2px 8px}
+
+/* context block */
+.ctx{background:var(--panel);border:1px solid var(--line);border-left:3px solid var(--teal);border-radius:0 8px 8px 0;padding:14px 16px;margin:0 0 8px}
+.ctx.gap{border-left-color:var(--alert);background:var(--alert-bg)}
+.ctx p{margin:0}
+.ctx .empty{color:var(--alert);font-family:var(--f-mono);font-size:12px}
+.tags{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.tag{font-size:11.5px;line-height:1.4;border-radius:4px;padding:3px 8px;border:1px solid transparent}
+.tag .kk{font-family:var(--f-mono);font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;margin-right:6px;font-weight:500}
+.tag.manual{background:var(--teal-bg);border-color:var(--teal);color:var(--teal-ink)}
+.tag.manual .kk{color:var(--teal)}
+.tag.physics{background:var(--amber-bg);border-color:var(--amber);color:var(--amber)}
+.tag.physics .kk{color:var(--amber)}
+
+/* regions */
+.section-lab{font-family:var(--f-mono);font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:var(--ink3);margin:30px 0 12px;padding-bottom:6px;border-bottom:1px solid var(--line)}
+.region{border:1px solid var(--line);border-radius:10px;background:var(--panel);margin-bottom:12px;overflow:hidden}
+.rhead{width:100%;text-align:left;background:none;border:none;cursor:pointer;padding:14px 16px;display:flex;align-items:center;gap:10px;color:var(--ink);font-family:var(--f-display);font-weight:600;font-size:15px}
+.rhead:hover{background:var(--panel2)}
+.rhead .chev{color:var(--ink3);transition:transform .15s;font-family:var(--f-mono);font-size:12px}
+.region.open .chev{transform:rotate(90deg)}
+.rcount{margin-left:auto;font-family:var(--f-mono);font-size:11px;color:var(--ink2);background:var(--panel2);border:1px solid var(--line);border-radius:20px;padding:2px 10px}
+.rcount.warn{color:var(--alert);border-color:var(--alert);background:var(--alert-bg)}
+.rbody{padding:0 16px 16px;display:none}
+.region.open .rbody{display:block}
+
+/* tables */
+table{width:100%;border-collapse:collapse;font-size:13px;margin-top:10px}
+th{text-align:left;font-family:var(--f-mono);font-weight:500;font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink3);padding:7px 10px;border-bottom:1px solid var(--line2)}
+td{padding:8px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:var(--panel2)}
+.cid{font-family:var(--f-mono);font-weight:500;color:var(--teal-ink);white-space:nowrap}
+.num{font-family:var(--f-mono);text-align:right;white-space:nowrap}
+.dim{color:var(--ink3)}
+.rv{font-family:var(--f-mono);font-size:12px;line-height:1.7}
+.rv .q{color:var(--ink3)}
+.rv .band{color:var(--ink3);font-size:11px}
+.pill{display:inline-block;font-family:var(--f-mono);font-size:10.5px;padding:1px 7px;border-radius:20px;border:1px solid var(--line2);color:var(--ink2)}
+.pill.chiral{border-color:var(--teal);color:var(--teal-ink);background:var(--teal-bg)}
+
+/* crossing cards */
+.xgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:10px;margin-top:10px}
+.xcard{border:1px solid var(--line);border-radius:8px;padding:12px;background:var(--panel2)}
+.xcard .ang{font-family:var(--f-display);font-weight:700;font-size:20px}
+.xcard .cid{font-size:12px}
+.xcard .row{display:flex;justify-content:space-between;font-family:var(--f-mono);font-size:11.5px;margin-top:6px;color:var(--ink2)}
+
+/* search + meta rows */
+.tools{display:flex;gap:10px;align-items:center;margin:0 0 4px}
+.search{flex:1;max-width:280px;font-family:var(--f-mono);font-size:12px;padding:6px 10px;border:1px solid var(--line2);border-radius:6px;background:var(--panel);color:var(--ink)}
+.search:focus{outline:none;border-color:var(--teal)}
+.hidden{display:none}
+.metarow{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px;margin-top:8px}
+.mcard{border:1px solid var(--line);border-radius:8px;padding:10px 12px;background:var(--panel)}
+.mcard .t{font-family:var(--f-mono);font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink3)}
+.mcard .v{font-family:var(--f-display);font-weight:600;margin-top:2px}
+.mcard small{color:var(--ink3);font-weight:400;font-size:12px}
+
+@media (max-width:820px){
+  .wrap{grid-template-columns:1fr}
+  .spine{position:static;height:auto;display:block;padding:16px}
+  .stack{display:flex;flex-wrap:wrap;gap:8px}
+  .dome,.base{display:none}
+  .seg{border-radius:8px;border-top:1px solid var(--line2);width:auto;flex:1;min-width:150px}
+  .stats{width:100%;margin-left:0;flex-wrap:wrap}
+}
+</style>
+</head>
+<body>
+<header class="top">
+  <span class="id" id="modelId"></span>
+  <h1 id="title"></h1>
+  <span class="maker" id="maker"></span>
+  <div class="stats" id="stats"></div>
+</header>
+
+<div class="wrap">
+  <nav class="spine">
+    <p class="lab">Fill port → base</p>
+    <div class="stack" id="stack"></div>
+    <div class="legend">
+      <div><span class="k" style="background:var(--teal)"></span>manual · from the operator manual</div>
+      <div><span class="k" style="background:var(--amber)"></span>physics · added domain knowledge</div>
+      <div><span class="k" style="background:var(--alert)"></span>needs context · gap to fill</div>
+    </div>
+  </nav>
+  <main class="detail" id="detail"></main>
+</div>
+
+<script type="application/json" id="phantom-data">{
+  "context": "",
+  "model_id": "PST-102228",
+  "name": "MRI Diffusion Phantom, Universal",
+  "manufacturer": "Psychology Software Tools, Inc.",
+  "fill_medium": "distilled water",
+  "temp_range_C": [
+    2.0,
+    40.0
+  ],
+  "optimal_temp_C": 20.0,
+  "solutes": [
+    {
+      "context": "",
+      "name": "NiCl2",
+      "role": "T1 mimic",
+      "concentration_note": "0.5 M aqueous stock"
+    },
+    {
+      "context": "",
+      "name": "MnCl2",
+      "role": "T2 mimic",
+      "concentration_note": "0.1 M stock"
+    },
+    {
+      "context": "",
+      "name": "D2O",
+      "role": "PD mimic",
+      "concentration_note": "deuterium oxide"
+    },
+    {
+      "context": "",
+      "name": "PVP",
+      "role": "ADC mimic",
+      "concentration_note": "polyvinylpyrrolidone"
+    },
+    {
+      "context": "",
+      "name": "CuSO4",
+      "role": "fiducial fluid",
+      "concentration_note": "copper(II) sulfate"
+    }
+  ],
+  "orientation_reference": {
+    "context": "",
+    "r_fiducial": "MR-readable chiral 'R' marker on each disk",
+    "base_arrows": "arrows on base label point up toward ceiling",
+    "isocenter": "dome alignment crosshair = center slice of isotropic cube array"
+  },
+  "disks": [
+    {
+      "context": "The geometric disk assesses spatial fidelity: geometric accuracy and distortion, in-plane resolution (high- and low-contrast), and slice-thickness accuracy. It is imaged with a thin-voxel T1 series so edges and small features are well sampled. Features are read against the R marker and the four through-hole slice fiducials, which must be co-planar with the slice for the measurements to be valid. [manual: metrics, feature set, protocol] [physics: thin-voxel sampling for edge/feature fidelity]\n",
+      "source": {
+        "page": 9,
+        "section": "3.1",
+        "origin": "manual",
+        "note": ""
+      },
+      "name": "Geometric Disk",
+      "stack_index": 1,
+      "band": "upper",
+      "optional": true,
+      "material": "machined carrier plate with hole grids, ramps, and screw-fiducials",
+      "metrics_enabled": [
+        "geometric_accuracy",
+        "distortion",
+        "resolution",
+        "contrast",
+        "slice_thickness"
+      ],
+      "test_regions": [
+        {
+          "context": "High-contrast spatial-resolution grids: 8 diameters from 0.4 to 1.1 mm, each provided as a 16-hole row set skewed 5 deg and a 16-hole column set. The 5 deg skew steps each hole a fraction of a voxel across the grid, so the smallest resolvable diameter is where holes stop being individually distinguishable - a sub-voxel sampling trick that reads resolution finer than the nominal pixel size. Separate row and column sets expose resolution differences between frequency- and phase-encode directions. [manual: diameters, 5 deg skew, row/column arrangement] [physics: sub-voxel sampling via skew, directional resolution]\n",
+          "source": {
+            "page": 9,
+            "section": "3.1",
+            "origin": "manual",
+            "note": ""
+          },
+          "category": "High Contrast Spatial Resolution Hole Patterns",
+          "count": 8,
+          "grid_scheme": "8 diameters 0.4-1.1 mm; each = 16-hole skewed row set + 16-hole column set",
+          "fixtures": [
+            {
+              "context": "",
+              "region_type": "hole_pattern",
+              "id": "HC_0p4",
+              "contrast": "high",
+              "hole_diameter_mm": 0.4,
+              "skew_deg": 5.0,
+              "object_diameters_mm": []
+            },
+            {
+              "context": "",
+              "region_type": "hole_pattern",
+              "id": "HC_0p5",
+              "contrast": "high",
+              "hole_diameter_mm": 0.5,
+              "skew_deg": 5.0,
+              "object_diameters_mm": []
+            },
+            {
+              "context": "",
+              "region_type": "hole_pattern",
+              "id": "HC_0p6",
+              "contrast": "high",
+              "hole_diameter_mm": 0.6,
+              "skew_deg": 5.0,
+              "object_diameters_mm": []
+            },
+            {
+              "context": "",
+              "region_type": "hole_pattern",
+              "id": "HC_0p7",
+              "contrast": "high",
+              "hole_diameter_mm": 0.7,
+              "skew_deg": 5.0,
+              "object_diameters_mm": []
+            },
+            {
+              "context": "",
+              "region_type": "hole_pattern",
+              "id": "HC_0p8",
+              "contrast": "high",
+              "hole_diameter_mm": 0.8,
+              "skew_deg": 5.0,
+              "object_diameters_mm": []
+            },
+            {
+              "context": "",
+              "region_type": "hole_pattern",
+              "id": "HC_0p9",
+              "contrast": "high",
+              "hole_diameter_mm": 0.9,
+              "skew_deg": 5.0,
+              "object_diameters_mm": []
+            },
+            {
+              "context": "",
+              "region_type": "hole_pattern",
+              "id": "HC_1p0",
+              "contrast": "high",
+              "hole_diameter_mm": 1.0,
+              "skew_deg": 5.0,
+              "object_diameters_mm": []
+            },
+            {
+              "context": "",
+              "region_type": "hole_pattern",
+              "id": "HC_1p1",
+              "contrast": "high",
+              "hole_diameter_mm": 1.1,
+              "skew_deg": 5.0,
+              "object_diameters_mm": []
+            }
+          ]
+        },
+        {
+          "context": "Low-contrast object patterns test detectability of features with small signal difference from background: through-holes of 1.5/2/3/5/7 mm paired with four water-displacing insert thicknesses (100/150/200/250 um). The insert thickness sets how much signal the feature displaces - thinner inserts give lower contrast - so the four inserts sweep a contrast ladder, and the smallest detectable hole at each contrast maps the contrast-detail behaviour of the acquisition. [manual: hole diameters, insert thicknesses] [physics: contrast-detail detectability, partial-volume signal displacement]\n",
+          "source": {
+            "page": 9,
+            "section": "3.1",
+            "origin": "manual",
+            "note": ""
+          },
+          "category": "Low Contrast Object Patterns",
+          "count": 4,
+          "grid_scheme": "4 inserts (100/150/200/250 um); each with through-holes 1.5/2/3/5/7 mm",
+          "fixtures": [
+            {
+              "context": "",
+              "region_type": "hole_pattern",
+              "id": "LC_100um",
+              "contrast": "low",
+              "object_diameters_mm": [
+                1.5,
+                2.0,
+                3.0,
+                5.0,
+                7.0
+              ],
+              "insert_thickness_um": 100.0
+            },
+            {
+              "context": "",
+              "region_type": "hole_pattern",
+              "id": "LC_150um",
+              "contrast": "low",
+              "object_diameters_mm": [
+                1.5,
+                2.0,
+                3.0,
+                5.0,
+                7.0
+              ],
+              "insert_thickness_um": 150.0
+            },
+            {
+              "context": "",
+              "region_type": "hole_pattern",
+              "id": "LC_200um",
+              "contrast": "low",
+              "object_diameters_mm": [
+                1.5,
+                2.0,
+                3.0,
+                5.0,
+                7.0
+              ],
+              "insert_thickness_um": 200.0
+            },
+            {
+              "context": "",
+              "region_type": "hole_pattern",
+              "id": "LC_250um",
+              "contrast": "low",
+              "object_diameters_mm": [
+                1.5,
+                2.0,
+                3.0,
+                5.0,
+                7.0
+              ],
+              "insert_thickness_um": 250.0
+            }
+          ]
+        },
+        {
+          "context": "Slice-thickness and slice-selection ramps convert an out-of-plane geometry into an in-plane length. The thickness ramp (9 x 90 mm, 5.71 deg) crosses the slice at a shallow angle, so the imaged ramp length L gives slice thickness t = L*tan(5.71 deg) ~= L/10 (the classic 10:1 ramp ratio); the 45 deg selection ramps (10 mm) similarly encode slice position and profile. Reading these requires the slice to sit at the ramps' widest-contiguous point, aligned via the funnel fiducial. [manual: ramp dimensions, angles, alignment note] [physics: ramp-angle geometry converts slice thickness to in-plane length]\n",
+          "source": {
+            "page": 9,
+            "section": "3.1",
+            "origin": "manual",
+            "note": ""
+          },
+          "category": "Slice Ramps / Wedges",
+          "count": 3,
+          "grid_scheme": "1 pair thickness ramps (9x90 mm, 5.71 deg); 2 pairs selection ramps (10 mm, 45 deg)",
+          "fixtures": [
+            {
+              "context": "provided as 1 pair",
+              "region_type": "ramp",
+              "id": "ramp_thickness",
+              "ramp_type": "slice_thickness",
+              "dimensions_mm": "9 x 90",
+              "angle_deg": 5.71
+            },
+            {
+              "context": "provided as 2 pairs",
+              "region_type": "ramp",
+              "id": "ramp_selection",
+              "ramp_type": "slice_selection",
+              "dimensions_mm": "10",
+              "angle_deg": 45.0
+            }
+          ]
+        }
+      ],
+      "fiducials": [
+        {
+          "context": "funnel-shaped through-hole; align smallest diameter to slice-ramp widest point",
+          "region_type": "fiducial",
+          "id": "geo_fid_1",
+          "purpose": "slice_selection",
+          "is_chiral_marker": false
+        },
+        {
+          "context": "",
+          "region_type": "fiducial",
+          "id": "geo_fid_2",
+          "purpose": "slice_selection",
+          "is_chiral_marker": false
+        },
+        {
+          "context": "",
+          "region_type": "fiducial",
+          "id": "geo_fid_3",
+          "purpose": "slice_selection",
+          "is_chiral_marker": false
+        },
+        {
+          "context": "",
+          "region_type": "fiducial",
+          "id": "geo_fid_4",
+          "purpose": "slice_selection",
+          "is_chiral_marker": false
+        },
+        {
+          "context": "",
+          "region_type": "fiducial",
+          "id": "R_marker",
+          "purpose": "orientation",
+          "is_chiral_marker": true
+        }
+      ],
+      "protocol": {
+        "context": "",
+        "summary": "1 T1 series, full Z coverage of disk",
+        "series": [
+          {
+            "context": "",
+            "name": "ACR_AX_T1_3_0MM_THICK",
+            "voxel_mm": "0.5 x 0.5 x 3.0",
+            "tr_ms": 500.0,
+            "te_ms": 20.0,
+            "b_values": [],
+            "n_slices": 11,
+            "slice_thickness_mm": 3.0,
+            "orientation": "Transversal, A>>P"
+          }
+        ]
+      },
+      "hardware": []
+    },
+    {
+      "context": "The anisotropic diffusion disk validates directional diffusion metrics - FA, MD, RD, QA - and fibre tracking, using patented nylon Taxon fibres. Each Taxon packs thousands of parallel hollow tubes of sub-micron inner diameter; water inside is restricted across the tube but free along it, producing strong reproducible diffusion anisotropy that mimics white-matter axons. Density and crossing fixtures let the disk probe how metrics and tractography degrade with lower fibre density and with fibre crossings. [manual: metrics, Taxon construction, fixture groups] [physics: restricted-vs-free diffusion producing anisotropy]\n",
+      "source": {
+        "page": 10,
+        "section": "3.2",
+        "origin": "manual",
+        "note": ""
+      },
+      "name": "Anisotropic Diffusion Disk",
+      "stack_index": 2,
+      "band": "upper",
+      "optional": false,
+      "material": "nylon textile fiber (Taxon) fixtures on carrier plate",
+      "metrics_enabled": [
+        "FA",
+        "MD",
+        "RD",
+        "QA",
+        "compartmental_modeling"
+      ],
+      "test_regions": [
+        {
+          "context": "Density fixtures form a 4x4 grid: rows are tract size (1/2/4/6 mm), columns are Taxon hole density (100/50/33.3/16.7 %). Lowering density interleaves solid (hole-free) fibre rows, so a larger fraction of each voxel is free water - the tract's apparent FA drops through partial-volume dilution even though the fibres themselves are unchanged. Smaller tract sizes drive the same effect via voxel partial-volume at the tract edge, so the grid separates true microstructure from resolution and partial-volume confounds. Manufacturer guidance: most 3T systems resolve all 6 mm fixtures, most 4 mm, and at least the 100% density 2 mm fixture. [manual: grid scheme, sizes, densities, taxon counts, 3T detectability guidance] [physics: density/partial-volume dilution of FA, voxel partial-volume]\n",
+          "source": {
+            "page": 12,
+            "section": "3.2",
+            "origin": "manual",
+            "note": ""
+          },
+          "category": "Density Fixtures",
+          "count": 16,
+          "grid_scheme": "row = tract size (1/2/4/6 mm); col = density (100/50/33.3/16.7 %)",
+          "fixtures": [
+            {
+              "context": "",
+              "region_type": "fiber_tract",
+              "id": "D_1mm_100",
+              "fiber_type": "square_taxon",
+              "tract_size_mm": 1.0,
+              "length_mm": 20.0,
+              "density_pct": 100.0,
+              "pore_description": "thousands of water-filled hollow tubes, sub-micron ID",
+              "n_taxons": 515232,
+              "layout": {
+                "kind": "grid",
+                "row": 1,
+                "col": 1,
+                "anchor": "R_fiducial",
+                "region_hint": ""
+              }
+            },
+            {
+              "context": "",
+              "region_type": "fiber_tract",
+              "id": "D_1mm_50",
+              "fiber_type": "square_taxon",
+              "tract_size_mm": 1.0,
+              "length_mm": 20.0,
+              "density_pct": 50.0,
+              "pore_description": "thousands of water-filled hollow tubes, sub-micron ID",
+              "n_taxons": 257616,
+              "layout": {
+                "kind": "grid",
+                "row": 1,
+                "col": 2,
+                "anchor": "R_fiducial",
+                "region_hint": ""
+              }
+            },
+            {
+              "context": "",
+              "region_type": "fiber_tract",
+              "id": "D_1mm_33",
+              "fiber_type": "square_taxon",
+              "tract_size_mm": 1.0,
+              "length_mm": 20.0,
+              "density_pct": 33.3,
+              "pore_description": "thousands of water-filled hollow tubes, sub-micron ID",
+              "n_taxons": 171744,
+              "layout": {
+                "kind": "grid",
+                "row": 1,
+                "col": 3,
+                "anchor": "R_fiducial",
+                "region_hint": ""
+              }
+            },
+            {
+              "context": "",
+              "region_type": "fiber_tract",
+              "id": "D_1mm_17",
+              "fiber_type": "square_taxon",
+              "tract_size_mm": 1.0,
+              "length_mm": 20.0,
+              "density_pct": 16.7,
+              "pore_description": "thousands of water-filled hollow tubes, sub-micron ID",
+              "n_taxons": 85872,
+              "layout": {
+                "kind": "grid",
+                "row": 1,
+                "col": 4,
+                "anchor": "R_fiducial",
+                "region_hint": ""
+              }
+            },
+            {
+              "context": "",
+              "region_type": "fiber_tract",
+              "id": "D_2mm_100",
+              "fiber_type": "square_taxon",
+              "tract_size_mm": 2.0,
+              "length_mm": 20.0,
+              "density_pct": 100.0,
+              "pore_description": "thousands of water-filled hollow tubes, sub-micron ID",
+              "n_taxons": 2060928,
+              "layout": {
+                "kind": "grid",
+                "row": 2,
+                "col": 1,
+                "anchor": "R_fiducial",
+                "region_hint": ""
+              }
+            },
+            {
+              "context": "",
+              "region_type": "fiber_tract",
+              "id": "D_2mm_50",
+              "fiber_type": "square_taxon",
+              "tract_size_mm": 2.0,
+              "length_mm": 20.0,
+              "density_pct": 50.0,
+              "pore_description": "thousands of water-filled hollow tubes, sub-micron ID",
+              "n_taxons": 1030464,
+              "layout": {
+                "kind": "grid",
+                "row": 2,
+                "col": 2,
+                "anchor": "R_fiducial",
+                "region_hint": ""
+              }
+            },
+            {
+              "context": "",
+              "region_type": "fiber_tract",
+              "id": "D_2mm_33",
+              "fiber_type": "square_taxon",
+              "tract_size_mm": 2.0,
+              "length_mm": 20.0,
+              "density_pct": 33.3,
+              "pore_description": "thousands of water-filled hollow tubes, sub-micron ID",
+              "n_taxons": 686976,
+              "layout": {
+                "kind": "grid",
+                "row": 2,
+                "col": 3,
+                "anchor": "R_fiducial",
+                "region_hint": ""
+              }
+            },
+            {
+              "context": "",
+              "region_type": "fiber_tract",
+              "id": "D_2mm_17",
+              "fiber_type": "square_taxon",
+              "tract_size_mm": 2.0,
+              "length_mm": 20.0,
+              "density_pct": 16.7,
+              "pore_description": "thousands of water-filled hollow tubes, sub-micron ID",
+              "n_taxons": 343488,
+              "layout": {
+                "kind": "grid",
+                "row": 2,
+                "col": 4,
+                "anchor": "R_fiducial",
+                "region_hint": ""
+              }
+            },
+            {
+              "context": "",
+              "region_type": "fiber_tract",
+              "id": "D_4mm_100",
+              "fiber_type": "square_taxon",
+              "tract_size_mm": 4.0,
+              "length_mm": 20.0,
+              "density_pct": 100.0,
+              "pore_description": "thousands of water-filled hollow tubes, sub-micron ID",
+              "n_taxons": 8243712,
+              "layout": {
+                "kind": "grid",
+                "row": 3,
+                "col": 1,
+                "anchor": "R_fiducial",
+                "region_hint": ""
+              }
+            },
+            {
+              "context": "",
+              "region_type": "fiber_tract",
+              "id": "D_4mm_50",
+              "fiber_type": "square_taxon",
+              "tract_size_mm": 4.0,
+              "length_mm": 20.0,
+              "density_pct": 50.0,
+              "pore_description": "thousands of water-filled hollow tubes, sub-micron ID",
+              "n_taxons": 4121856,
+              "layout": {
+                "kind": "grid",
+                "row": 3,
+                "col": 2,
+                "anchor": "R_fiducial",
+                "region_hint": ""
+              }
+            },
+            {
+              "context": "",
+              "region_type": "fiber_tract",
+              "id": "D_4mm_33",
+              "fiber_type": "square_taxon",
+              "tract_size_mm": 4.0,
+              "length_mm": 20.0,
+              "density_pct": 33.3,
+              "pore_description": "thousands of water-filled hollow tubes, sub-micron ID",
+              "n_taxons": 2747904,
+              "layout": {
+                "kind": "grid",
+                "row": 3,
+                "col": 3,
+                "anchor": "R_fiducial",
+                "region_hint": ""
+              }
+            },
+            {
+              "context": "",
+              "region_type": "fiber_tract",
+              "id": "D_4mm_17",
+              "fiber_type": "square_taxon",
+              "tract_size_mm": 4.0,
+              "length_mm": 20.0,
+              "density_pct": 16.7,
+              "pore_description": "thousands of water-filled hollow tubes, sub-micron ID",
+              "n_taxons": 1373952,
+              "layout": {
+                "kind": "grid",
+                "row": 3,
+                "col": 4,
+                "anchor": "R_fiducial",
+                "region_hint": ""
+              }
+            },
+            {
+              "context": "",
+              "region_type": "fiber_tract",
+              "id": "D_6mm_100",
+              "fiber_type": "square_taxon",
+              "tract_size_mm": 6.0,
+              "length_mm": 20.0,
+              "density_pct": 100.0,
+              "pore_description": "thousands of water-filled hollow tubes, sub-micron ID",
+              "n_taxons": 18548352,
+              "layout": {
+                "kind": "grid",
+                "row": 4,
+                "col": 1,
+                "anchor": "R_fiducial",
+                "region_hint": ""
+              }
+            },
+            {
+              "context": "",
+              "region_type": "fiber_tract",
+              "id": "D_6mm_50",
+              "fiber_type": "square_taxon",
+              "tract_size_mm": 6.0,
+              "length_mm": 20.0,
+              "density_pct": 50.0,
+              "pore_description": "thousands of water-filled hollow tubes, sub-micron ID",
+              "n_taxons": 9274176,
+              "layout": {
+                "kind": "grid",
+                "row": 4,
+                "col": 2,
+                "anchor": "R_fiducial",
+                "region_hint": ""
+              }
+            },
+            {
+              "context": "",
+              "region_type": "fiber_tract",
+              "id": "D_6mm_33",
+              "fiber_type": "square_taxon",
+              "tract_size_mm": 6.0,
+              "length_mm": 20.0,
+              "density_pct": 33.3,
+              "pore_description": "thousands of water-filled hollow tubes, sub-micron ID",
+              "n_taxons": 6182784,
+              "layout": {
+                "kind": "grid",
+                "row": 4,
+                "col": 3,
+                "anchor": "R_fiducial",
+                "region_hint": ""
+              }
+            },
+            {
+              "context": "",
+              "region_type": "fiber_tract",
+              "id": "D_6mm_17",
+              "fiber_type": "square_taxon",
+              "tract_size_mm": 6.0,
+              "length_mm": 20.0,
+              "density_pct": 16.7,
+              "pore_description": "thousands of water-filled hollow tubes, sub-micron ID",
+              "n_taxons": 3091392,
+              "layout": {
+                "kind": "grid",
+                "row": 4,
+                "col": 4,
+                "anchor": "R_fiducial",
+                "region_hint": ""
+              }
+            }
+          ]
+        },
+        {
+          "context": "Crossing fixtures cross two 6 mm tracts at a set angle. Three fixed-density crossings (30/45/90 deg, both tracts 100%) test angular resolvability: a single-tensor model cannot represent two directions, so it reports artefactually low FA and a misleading mean direction at the crossing, worst at small angles - which is why crossing-fibre models (MSMT-CSD, ball-and-sticks) exist. Three further 45 deg crossings hold the vertical tract at 100% and lower the crossing tract (50/33.3/16.7 %), varying the volume-fraction ratio between the two fibre populations. [manual: angles, densities, tract sizes, taxon counts] [physics: single-tensor failure at crossings, volume-fraction ratio effects]\n",
+          "source": {
+            "page": 11,
+            "section": "3.2",
+            "origin": "manual",
+            "note": ""
+          },
+          "category": "Crossing Fixtures",
+          "count": 6,
+          "grid_scheme": "vertical/primary tract fixed 100%; crossing tract varies",
+          "fixtures": [
+            {
+              "context": "",
+              "region_type": "crossing_fixture",
+              "id": "X_30_100x100",
+              "crossing_angle_deg": 30,
+              "primary_tract": {
+                "context": "",
+                "region_type": "fiber_tract",
+                "id": "X30_pri",
+                "fiber_type": "square_taxon",
+                "tract_size_mm": 6.0,
+                "length_mm": 20.0,
+                "density_pct": 100.0,
+                "pore_description": "thousands of water-filled hollow tubes, sub-micron ID",
+                "n_taxons": 18548352,
+                "orientation": "vertical"
+              },
+              "crossing_tract": {
+                "context": "",
+                "region_type": "fiber_tract",
+                "id": "X30_crs",
+                "fiber_type": "square_taxon",
+                "tract_size_mm": 6.0,
+                "length_mm": 20.0,
+                "density_pct": 100.0,
+                "pore_description": "thousands of water-filled hollow tubes, sub-micron ID",
+                "n_taxons": 18548352
+              }
+            },
+            {
+              "context": "",
+              "region_type": "crossing_fixture",
+              "id": "X_45_100x100",
+              "crossing_angle_deg": 45,
+              "primary_tract": {
+                "context": "",
+                "region_type": "fiber_tract",
+                "id": "X45_pri",
+                "fiber_type": "square_taxon",
+                "tract_size_mm": 6.0,
+                "length_mm": 20.0,
+                "density_pct": 100.0,
+                "pore_description": "thousands of water-filled hollow tubes, sub-micron ID",
+                "n_taxons": 18548352,
+                "orientation": "vertical"
+              },
+              "crossing_tract": {
+                "context": "",
+                "region_type": "fiber_tract",
+                "id": "X45_crs",
+                "fiber_type": "square_taxon",
+                "tract_size_mm": 6.0,
+                "length_mm": 20.0,
+                "density_pct": 100.0,
+                "pore_description": "thousands of water-filled hollow tubes, sub-micron ID",
+                "n_taxons": 18548352
+              }
+            },
+            {
+              "context": "",
+              "region_type": "crossing_fixture",
+              "id": "X_90_100x100",
+              "crossing_angle_deg": 90,
+              "primary_tract": {
+                "context": "",
+                "region_type": "fiber_tract",
+                "id": "X90_pri",
+                "fiber_type": "square_taxon",
+                "tract_size_mm": 6.0,
+                "length_mm": 20.0,
+                "density_pct": 100.0,
+                "pore_description": "thousands of water-filled hollow tubes, sub-micron ID",
+                "n_taxons": 18548352,
+                "orientation": "vertical"
+              },
+              "crossing_tract": {
+                "context": "",
+                "region_type": "fiber_tract",
+                "id": "X90_crs",
+                "fiber_type": "square_taxon",
+                "tract_size_mm": 6.0,
+                "length_mm": 20.0,
+                "density_pct": 100.0,
+                "pore_description": "thousands of water-filled hollow tubes, sub-micron ID",
+                "n_taxons": 18548352
+              }
+            },
+            {
+              "context": "",
+              "region_type": "crossing_fixture",
+              "id": "X_45_100x50",
+              "crossing_angle_deg": 45,
+              "primary_tract": {
+                "context": "",
+                "region_type": "fiber_tract",
+                "id": "X45b_pri",
+                "fiber_type": "square_taxon",
+                "tract_size_mm": 6.0,
+                "length_mm": 20.0,
+                "density_pct": 100.0,
+                "pore_description": "thousands of water-filled hollow tubes, sub-micron ID",
+                "n_taxons": 18548352,
+                "orientation": "vertical"
+              },
+              "crossing_tract": {
+                "context": "",
+                "region_type": "fiber_tract",
+                "id": "X45b_crs",
+                "fiber_type": "square_taxon",
+                "tract_size_mm": 6.0,
+                "length_mm": 20.0,
+                "density_pct": 50.0,
+                "pore_description": "thousands of water-filled hollow tubes, sub-micron ID",
+                "n_taxons": 9274176
+              }
+            },
+            {
+              "context": "",
+              "region_type": "crossing_fixture",
+              "id": "X_45_100x33",
+              "crossing_angle_deg": 45,
+              "primary_tract": {
+                "context": "",
+                "region_type": "fiber_tract",
+                "id": "X45c_pri",
+                "fiber_type": "square_taxon",
+                "tract_size_mm": 6.0,
+                "length_mm": 20.0,
+                "density_pct": 100.0,
+                "pore_description": "thousands of water-filled hollow tubes, sub-micron ID",
+                "n_taxons": 18548352,
+                "orientation": "vertical"
+              },
+              "crossing_tract": {
+                "context": "",
+                "region_type": "fiber_tract",
+                "id": "X45c_crs",
+                "fiber_type": "square_taxon",
+                "tract_size_mm": 6.0,
+                "length_mm": 20.0,
+                "density_pct": 33.3,
+                "pore_description": "thousands of water-filled hollow tubes, sub-micron ID",
+                "n_taxons": 6182784
+              }
+            },
+            {
+              "context": "",
+              "region_type": "crossing_fixture",
+              "id": "X_45_100x17",
+              "crossing_angle_deg": 45,
+              "primary_tract": {
+                "context": "",
+                "region_type": "fiber_tract",
+                "id": "X45d_pri",
+                "fiber_type": "square_taxon",
+                "tract_size_mm": 6.0,
+                "length_mm": 20.0,
+                "density_pct": 100.0,
+                "pore_description": "thousands of water-filled hollow tubes, sub-micron ID",
+                "n_taxons": 18548352,
+                "orientation": "vertical"
+              },
+              "crossing_tract": {
+                "context": "",
+                "region_type": "fiber_tract",
+                "id": "X45d_crs",
+                "fiber_type": "square_taxon",
+                "tract_size_mm": 6.0,
+                "length_mm": 20.0,
+                "density_pct": 16.7,
+                "pore_description": "thousands of water-filled hollow tubes, sub-micron ID",
+                "n_taxons": 3091392
+              }
+            }
+          ]
+        }
+      ],
+      "fiducials": [
+        {
+          "context": "",
+          "region_type": "fiducial",
+          "id": "R_marker",
+          "purpose": "orientation",
+          "is_chiral_marker": true
+        }
+      ],
+      "protocol": {
+        "context": "",
+        "summary": "8 series — b0 + 3 shells (b=200/1000/3000), 64 dir, AP & PA",
+        "series": [
+          {
+            "context": "",
+            "name": "DTI64X_PRODUCT_b3000_AP",
+            "voxel_mm": "2.0 x 2.0 x 2.0",
+            "tr_ms": 8000.0,
+            "te_ms": 74.0,
+            "b_values": [
+              3000
+            ],
+            "directions": 64,
+            "n_slices": 24,
+            "slice_thickness_mm": 2.0,
+            "orientation": "Transversal, A>>P"
+          }
+        ]
+      },
+      "hardware": [
+        {
+          "context": "",
+          "source": {
+            "origin": "figure_observed",
+            "note": "screws visible around fixtures in 3.2 render"
+          },
+          "type": "screw",
+          "function": "fixture_mounting",
+          "material": "nylon",
+          "mr_safe": true
+        }
+      ]
+    },
+    {
+      "context": "The isotropic diffusion disk is the relaxometry and quantitative-reference module: 47 sealed 1.2 ml polypropylene cubes in five colour-coded arrays (T1, T2, PD, ADC, CuSO4 fiducials). Each array sweeps one doping agent along a concentration ladder so a single quantitative parameter varies monotonically while the others stay comparatively fixed, giving per-parameter calibration curves from one centred slice. Reference values are supplied at 3T (T1/T2 at 20 C, ADC at 19.5 C); measured values depend on field strength and temperature, so the tabulated numbers are calibration anchors, not guarantees at arbitrary scanner conditions. [manual: cube count, arrays, reference conditions] [physics: single-axis-sweep calibration principle, field/temperature dependence]",
+      "source": {
+        "page": 13,
+        "section": "3.3",
+        "origin": "manual",
+        "note": ""
+      },
+      "name": "Isotropic Diffusion Disk",
+      "stack_index": 3,
+      "band": "mid",
+      "optional": false,
+      "material": "1.2 ml polypropylene fluid cubes on carrier plate",
+      "metrics_enabled": [
+        "T1",
+        "T2",
+        "T2star",
+        "PD",
+        "ADC"
+      ],
+      "test_regions": [
+        {
+          "context": "T1 array agent: nickel(II) chloride. Ni2+ is paramagnetic; unpaired d-electrons provide a dipolar relaxation pathway for water protons, so relaxation rate rises with concentration, 1/T1 = 1/T1_0 + r1*[Ni2+]. The 12-cube ladder therefore spans ~2000 ms down to ~21 ms as concentration increases. Ni2+ relaxivity has a comparatively low temperature coefficient, so cube T1 tracks concentration more than small room-temperature drift. T2 is tabulated per cube as well - the agent shortens T2 alongside T1, so these are not pure-T1 objects. [manual: NiCl2 identity, concentrations, T1/T2 values @3T,20C] [physics: paramagnetic relaxivity relation, low temperature coefficient, T1/T2 co-shortening]",
+          "category": "T1 Array (NiCl2)",
+          "count": 12,
+          "grid_scheme": "green cubes; ~21-2000 ms",
+          "fixtures": [
+            {
+              "context": "",
+              "region_type": "fluid_cell",
+              "id": "T1-1",
+              "array": "T1",
+              "solute": "NiCl2",
+              "concentration": "0.3 mM",
+              "sealed_volume_ml": 1.2,
+              "container": "polypropylene cube",
+              "reference_values": [
+                {
+                  "context": "",
+                  "quantity": "T1",
+                  "value": 2000.08,
+                  "unit": "ms",
+                  "unc_minus": 1984.36,
+                  "unc_plus": 2016.05,
+                  "field_strength_T": 3.0,
+                  "temp_C": 20.0,
+                  "citation": ""
+                },
+                {
+                  "context": "",
+                  "quantity": "T2",
+                  "value": 1779.04,
+                  "unit": "ms",
+                  "unc_minus": 1765.85,
+                  "unc_plus": 1792.44,
+                  "field_strength_T": 3.0,
+                  "temp_C": 20.0,
+                  "citation": ""
+                }
+              ],
+              "layout": {
+                "kind": "array",
+                "array": "T1",
+                "array_index": 1,
+                "anchor": "R_fiducial"
+              }
+            },
+            {
+              "context": "",
+              "region_type": "fluid_cell",
+              "id": "T1-2",
+              "array": "T1",
+              "solute": "NiCl2",
+              "concentration": "0.623 mM",
+              "sealed_volume_ml": 1.2,
+              "container": "polypropylene cube",
+              "reference_values": [
+                {
+                  "context": "",
+                  "quantity": "T1",
+                  "value": 1397.04,
+                  "unit": "ms",
+                  "unc_minus": 1384.27,
+                  "unc_plus": 1410.04,
+                  "field_strength_T": 3.0,
+                  "temp_C": 20.0,
+                  "citation": ""
+                },
+                {
+                  "context": "",
+                  "quantity": "T2",
+                  "value": 1264.22,
+                  "unit": "ms",
+                  "unc_minus": 1253.13,
+                  "unc_plus": 1275.51,
+                  "field_strength_T": 3.0,
+                  "temp_C": 20.0,
+                  "citation": ""
+                }
+              ],
+              "layout": {
+                "kind": "array",
+                "array": "T1",
+                "array_index": 2,
+                "anchor": "R_fiducial"
+              }
+            },
+            {
+              "context": "",
+              "region_type": "fluid_cell",
+              "id": "T1-3",
+              "array": "T1",
+              "solute": "NiCl2",
+              "concentration": "1.072 mM",
+              "sealed_volume_ml": 1.2,
+              "container": "polypropylene cube",
+              "reference_values": [
+                {
+                  "context": "",
+                  "quantity": "T1",
+                  "value": 980.97,
+                  "unit": "ms",
+                  "unc_minus": 968.43,
+                  "unc_plus": 993.84,
+                  "field_strength_T": 3.0,
+                  "temp_C": 20.0,
+                  "citation": ""
+                },
+                {
+                  "context": "",
+                  "quantity": "T2",
+                  "value": 898.47,
+                  "unit": "ms",
+                  "unc_minus": 887.31,
+                  "unc_plus": 909.92,
+                  "field_strength_T": 3.0,
+                  "temp_C": 20.0,
+                  "citation": ""
+                }
+              ],
+              "layout": {
+                "kind": "array",
+                "array": "T1",
+                "array_index": 3,
+                "anchor": "R_fiducial"
+              }
+            },
+            {
+              "context": "",
+              "region_type": "fluid_cell",
+              "id": "T1-4",
+              "array": "T1",
+              "solute": "NiCl2",
+              "concentration": "1.706 mM",
+              "sealed_volume_ml": 1.2,
+              "container": "polypropylene cube",
+              "reference_values": [
+                {
+                  "context": "",
+                  "quantity": "T1",
+                  "value": 693.58,
+                  "unit": "ms",
+                  "unc_minus": 684.18,
+                  "unc_plus": 703.23,
+                  "field_strength_T": 3.0,
+                  "temp_C": 20.0,
+                  "citation": ""
+                },
+                {
+                  "context": "",
+                  "quantity": "T2",
+                  "value": 640.61,
+                  "unit": "ms",
+                  "unc_minus": 632.11,
+                  "unc_plus": 649.35,
+                  "field_strength_T": 3.0,
+                  "temp_C": 20.0,
+                  "citation": ""
+                }
+              ],
+              "layout": {
+                "kind": "array",
+                "array": "T1",
+                "array_index": 4,
+                "anchor": "R_fiducial"
+              }
+            },
+            {
+              "context": "",
+              "region_type": "fluid_cell",
+              "id": "T1-5",
+              "array": "T1",
+              "solute": "NiCl2",
+              "concentration": "2.617 mM",
+              "sealed_volume_ml": 1.2,
+              "container": "polypropylene cube",
+              "reference_values": [
+                {
+                  "context": "",
+                  "quantity": "T1",
+                  "value": 486.48,
+                  "unit": "ms",
+                  "unc_minus": 478.79,
+                  "unc_plus": 494.41,
+                  "field_strength_T": 3.0,
+                  "temp_C": 20.0,
+                  "citation": ""
+                },
+                {
+                  "context": "",
+                  "quantity": "T2",
+                  "value": 452.08,
+                  "unit": "ms",
+                  "unc_minus": 445.04,
+                  "unc_plus": 459.35,
+                  "field_strength_T": 3.0,
+                  "temp_C": 20.0,
+                  "citation": ""
+                }
+              ],
+              "layout": {
+                "kind": "array",
+                "array": "T1",
+                "array_index": 5,
+                "anchor": "R_fiducial"
+              }
+            },
+            {
+              "context": "",
+              "region_type": "fluid_cell",
+              "id": "T1-6",
+              "array": "T1",
+              "solute": "NiCl2",
+              "concentration": "3.9 mM",
+              "sealed_volume_ml": 1.2,
+              "container": "polypropylene cube",
+              "reference_values": [
+                {
+                  "context": "",
+                  "quantity": "T1",
+                  "value": 344.78,
+                  "unit": "ms",
+                  "unc_minus": 338.62,
+                  "unc_plus": 351.17,
+                  "field_strength_T": 3.0,
+                  "temp_C": 20.0,
+                  "citation": ""
+                },
+                {
+                  "context": "",
+                  "quantity": "T2",
+                  "value": 321.75,
+                  "unit": "ms",
+                  "unc_minus": 316.06,
+                  "unc_plus": 327.65,
+                  "field_strength_T": 3.0,
+                  "temp_C": 20.0,
+                  "citation": ""
+                }
+              ],
+              "layout": {
+                "kind": "array",
+                "array": "T1",
+                "array_index": 6,
+                "anchor": "R_fiducial"
+              }
+            },
+            {
+              "context": "",
+              "region_type": "fluid_cell",
+              "id": "T1-7",
+              "array": "T1",
+              "solute": "NiCl2",
+              "concentration": "5.713 mM",
+              "sealed_volume_ml": 1.2,
+              "container": "polypropylene cube",
+              "reference_values": [
+                {
+                  "context": "",
+                  "quantity": "T1",
+                  "value": 244.59,
+                  "unit": "ms",
+                  "unc_minus": 240.71,
+                  "unc_plus": 248.61,
+                  "field_strength_T": 3.0,
+                  "temp_C": 20.0,
+                  "citation": ""
+                },
+                {
+                  "context": "",
+                  "quantity": "T2",
+                  "value": 228.94,
+                  "unit": "ms",
+                  "unc_minus": 225.33,
+                  "unc_plus": 232.67,
+                  "field_strength_T": 3.0,
+                  "temp_C": 20.0,
+                  "citation": ""
+                }
+              ],
+              "layout": {
+                "kind": "array",
+                "array": "T1",
+                "array_index": 7,
+                "anchor": "R_fiducial"
+              }
+            },
+            {
+              "context": "",
+              "region_type": "fluid_cell",
+              "id": "T1-8",
+              "array": "T1",
+              "solute": "NiCl2",
+              "concentration": "8.297 mM",
+              "sealed_volume_ml": 1.2,
+              "container": "polypropylene cube",
+              "reference_values": [
+                {
+                  "context": "",
+                  "quantity": "T1",
+                  "value": 173.47,
+                  "unit": "ms",
+                  "unc_minus": 169.58,
+                  "unc_plus": 177.53,
+                  "field_strength_T": 3.0,
+                  "temp_C": 20.0,
+                  "citation": ""
+                },
+                {
+                  "context": "",
+                  "quantity": "T2",
+                  "value": 162.71,
+                  "unit": "ms",
+                  "unc_minus": 159.08,
+                  "unc_plus": 166.5,
+                  "field_strength_T": 3.0,
+                  "temp_C": 20.0,
+                  "citation": ""
+                }
+              ],
+              "layout": {
+                "kind": "array",
+                "array": "T1",
+                "array_index": 8,
+                "anchor": "R_fiducial"
+              }
+            },
+            {
+              "context": "",
+              "region_type": "fluid_cell",
+              "id": "T1-10",
+              "array": "T1",
+              "solute": "NiCl2",
+              "concentration": "17.07 mM",
+              "sealed_volume_ml": 1.2,
+              "container": "polypropylene cube",
+              "reference_values": [
+                {
+                  "context": "",
+                  "quantity": "T1",
+                  "value": 86.31,
+                  "unit": "ms",
+                  "unc_minus": 84.86,
+                  "unc_plus": 87.81,
+                  "field_strength_T": 3.0,
+                  "temp_C": 20.0,
+                  "citation": ""
+                },
+                {
+                  "context": "",
+                  "quantity": "T2",
+                  "value": 81.17,
+                  "unit": "ms",
+                  "unc_minus": 79.81,
+                  "unc_plus": 82.58,
+                  "field_strength_T": 3.0,
+                  "temp_C": 20.0,
+                  "citation": ""
+                }
+              ],
+              "layout": {
+                "kind": "array",
+                "array": "T1",
+                "array_index": 9,
+                "anchor": "R_fiducial"
+              }
+            },
+            {
+              "context": "",
+              "region_type": "fluid_cell",
+              "id": "T1-12",
+              "array": "T1",
+              "solute": "NiCl2",
+              "concentration": "34.567 mM",
+              "sealed_volume_ml": 1.2,
+              "container": "polypropylene cube",
+              "reference_values": [
+                {
+                  "context": "",
+                  "quantity": "T1",
+                  "value": 43.35,
+                  "unit": "ms",
+                  "unc_minus": 42.5,
+                  "unc_plus": 44.23,
+                  "field_strength_T": 3.0,
+                  "temp_C": 20.0,
+                  "citation": ""
+                },
+                {
+                  "context": "",
+                  "quantity": "T2",
+                  "value": 40.82,
+                  "unit": "ms",
+                  "unc_minus": 40.02,
+                  "unc_plus": 41.65,
+                  "field_strength_T": 3.0,
+                  "temp_C": 20.0,
+                  "citation": ""
+                }
+              ],
+              "layout": {
+                "kind": "array",
+                "array": "T1",
+                "array_index": 10,
+                "anchor": "R_fiducial"
+              }
+            },
+            {
+              "context": "",
+              "region_type": "fluid_cell",
+              "id": "T1-13",
+              "array": "T1",
+              "solute": "NiCl2",
+              "concentration": "49.133 mM",
+              "sealed_volume_ml": 1.2,
+              "container": "polypropylene cube",
+              "reference_values": [
+                {
+                  "context": "",
+                  "quantity": "T1",
+                  "value": 30.76,
+                  "unit": "ms",
+                  "unc_minus": 30.15,
+                  "unc_plus": 31.4,
+                  "field_strength_T": 3.0,
+                  "temp_C": 20.0,
+                  "citation": ""
+                },
+                {
+                  "context": "",
+                  "quantity": "T2",
+                  "value": 28.98,
+                  "unit": "ms",
+                  "unc_minus": 28.4,
+                  "unc_plus": 29.58,
+                  "field_strength_T": 3.0,
+                  "temp_C": 20.0,
+                  "citation": ""
+                }
+              ],
+              "layout": {
+                "kind": "array",
+                "array": "T1",
+                "array_index": 11,
+                "anchor": "R_fiducial"
+              }
+            },
+            {
+              "context": "",
+              "region_type": "fluid_cell",
+              "id": "T1-14",
+              "array": "T1",
+              "solute": "NiCl2",
+              "concentration": "69.676 mM",
+              "sealed_volume_ml": 1.2,
+              "container": "polypropylene cube",
+              "reference_values": [
+                {
+                  "context": "",
+                  "quantity": "T1",
+                  "value": 21.47,
+                  "unit": "ms",
+                  "unc_minus": 21.17,
+                  "unc_plus": 21.78,
+                  "field_strength_T": 3.0,
+                  "temp_C": 20.0,
+                  "citation": ""
+                },
+                {
+                  "context": "",
+                  "quantity": "T2",
+                  "value": 20.23,
+                  "unit": "ms",
+                  "unc_minus": 19.95,
+                  "unc_plus": 20.53,
+                  "field_strength_T": 3.0,
+                  "temp_C": 20.0,
+                  "citation": ""
+                }
+              ],
+              "layout": {
+                "kind": "array",
+                "array": "T1",
+                "array_index": 12,
+                "anchor": "R_fiducial"
+              }
+            }
+          ]
+        },
+        {
+          "context": "T2 array agent: manganese(II) chloride. Mn2+ is strongly paramagnetic with high transverse relaxivity r2, so 1/T2 = 1/T2_0 + r2*[Mn2+] and T2 shortens efficiently with concentration; the 12-cube ladder spans ~577 ms down to ~5 ms. Mn2+ also raises 1/T1 substantially (T1 tabulated per cube), so the array drives a wide T2 range with T1 co-varying rather than isolating T2. [manual: MnCl2 identity, concentrations, T1/T2 values @3T,20C] [physics: transverse relaxivity relation, simultaneous T1 shortening]",
+          "category": "T2 Array (MnCl2)",
+          "count": 12,
+          "grid_scheme": "red cubes; ~5-577 ms",
+          "fixtures": [
+            {
+              "context": "",
+              "region_type": "fluid_cell",
+              "id": "T2-1",
+              "array": "T2",
+              "solute": "MnCl2",
+              "concentration": "0.01326 mM",
+              "sealed_volume_ml": 1.2,
+              "container": "polypropylene cube",
+              "reference_values": [
+                {
+                  "context": "",
+                  "quantity": "T1",
+                  "value": 2607.4,
+                  "unit": "ms",
+                  "unc_minus": 2594.65,
+                  "unc_plus": 2620.27,
+                  "field_strength_T": 3.0,
+                  "temp_C": 20.0,
+                  "citation": ""
+                },
+                {
+                  "context": "",
+                  "quantity": "T2",
+                  "value": 577.41,
+                  "unit": "ms",
+                  "unc_minus": 567.2,
+                  "unc_plus": 587.99,
+                  "field_strength_T": 3.0,
+                  "temp_C": 20.0,
+                  "citation": ""
+                }
+              ],
+              "layout": {
+                "kind": "array",
+                "array": "T2",
+                "array_index": 1,
+                "anchor": "R_fiducial"
+              }
+            },
+            {
+              "context": "",
+              "region_type": "fluid_cell",
+              "id": "T2-2",
+              "array": "T2",
+              "solute": "MnCl2",
+              "concentration": "0.02084 mM",
+              "sealed_volume_ml": 1.2,
+              "container": "polypropylene cube",
+              "reference_values": [
+                {
+                  "context": "",
+                  "quantity": "T1",
+                  "value": 2318.83,
+                  "unit": "ms",
+                  "unc_minus": 2305.4,
+                  "unc_plus": 2332.42,
+                  "field_strength_T": 3.0,
+                  "temp_C": 20.0,
+                  "citation": ""
+                },
+                {
+                  "context": "",
+                  "quantity": "T2",
+                  "value": 396.59,
+                  "unit": "ms",
+                  "unc_minus": 390.16,
+                  "unc_plus": 403.23,
+                  "field_strength_T": 3.0,
+                  "temp_C": 20.0,
+                  "citation": ""
+                }
+              ],
+              "layout": {
+                "kind": "array",
+                "array": "T2",
+                "array_index": 2,
+                "anchor": "R_fiducial"
+              }
+            },
+            {
+              "context": "",
+              "region_type": "fluid_cell",
+              "id": "T2-3",
+              "array": "T2",
+              "solute": "MnCl2",
+              "concentration": "0.03112 mM",
+              "sealed_volume_ml": 1.2,
+              "container": "polypropylene cube",
+              "reference_values": [
+                {
+                  "context": "",
+                  "quantity": "T1",
+                  "value": 2013.84,
+                  "unit": "ms",
+                  "unc_minus": 1998.67,
+                  "unc_plus": 2029.24,
+                  "field_strength_T": 3.0,
+                  "temp_C": 20.0,
+                  "citation": ""
+                },
+                {
+                  "context": "",
+                  "quantity": "T2",
+                  "value": 277.62,
+                  "unit": "ms",
+                  "unc_minus": 272.9,
+                  "unc_plus": 282.51,
+                  "field_strength_T": 3.0,
+                  "temp_C": 20.0,
+                  "citation": ""
+                }
+              ],
+              "layout": {
+                "kind": "array",
+                "array": "T2",
+                "array_index": 3,
+                "anchor": "R_fiducial"
+              }
+            },
+            {
+              "context": "",
+              "region_type": "fluid_cell",
+              "id": "T2-4",
+              "array": "T2",
+              "solute": "MnCl2",
+              "concentration": "0.04678 mM",
+              "sealed_volume_ml": 1.2,
+              "container": "polypropylene cube",
+              "reference_values": [
+                {
+                  "context": "",
+                  "quantity": "T1",
+                  "value": 1687.34,
+                  "unit": "ms",
+                  "unc_minus": 1671.4,
+                  "unc_plus": 1703.59,
+                  "field_strength_T": 3.0,
+                  "temp_C": 20.0,
+                  "citation": ""
+                },
+                {
+                  "context": "",
+                  "quantity": "T2",
+                  "value": 192.61,
+                  "unit": "ms",
+                  "unc_minus": 189.21,
+                  "unc_plus": 196.15,
+                  "field_strength_T": 3.0,
+                  "temp_C": 20.0,
+                  "citation": ""
+                }
+              ],
+              "layout": {
+                "kind": "array",
+                "array": "T2",
+                "array_index": 4,
+                "anchor": "R_fiducial"
+              }
+            },
+            {
+              "context": "",
+              "region_type": "fluid_cell",
+              "id": "T2-5",
+              "array": "T2",
+              "solute": "MnCl2",
+              "concentration": "0.06892 mM",
+              "sealed_volume_ml": 1.2,
+              "container": "polypropylene cube",
+              "reference_values": [
+                {
+                  "context": "",
+                  "quantity": "T1",
+                  "value": 1374.25,
+                  "unit": "ms",
+                  "unc_minus": 1362.49,
+                  "unc_plus": 1386.22,
+                  "field_strength_T": 3.0,
+                  "temp_C": 20.0,
+                  "citation": ""
+                },
+                {
+                  "context": "",
+                  "quantity": "T2",
+                  "value": 134.67,
+                  "unit": "ms",
+                  "unc_minus": 132.81,
+                  "unc_plus": 136.58,
+                  "field_strength_T": 3.0,
+                  "temp_C": 20.0,
+                  "citation": ""
+                }
+              ],
+              "layout": {
+                "kind": "array",
+                "array": "T2",
+                "array_index": 5,
+                "anchor": "R_fiducial"
+              }
+            },
+            {
+              "context": "",
+              "region_type": "fluid_cell",
+              "id": "T2-6",
+              "array": "T2",
+              "solute": "MnCl2",
+              "concentration": "0.10076 mM",
+              "sealed_volume_ml": 1.2,
+              "container": "polypropylene cube",
+              "reference_values": [
+                {
+                  "context": "",
+                  "quantity": "T1",
+                  "value": 1077.59,
+                  "unit": "ms",
+                  "unc_minus": 1063.2,
+                  "unc_plus": 1092.37,
+                  "field_strength_T": 3.0,
+                  "temp_C": 20.0,
+                  "citation": ""
+                },
+                {
+                  "context": "",
+                  "quantity": "T2",
+                  "value": 93.11,
+                  "unit": "ms",
+                  "unc_minus": 91.34,
+                  "unc_plus": 94.95,
+                  "field_strength_T": 3.0,
+                  "temp_C": 20.0,
+                  "citation": ""
+                }
+              ],
+              "layout": {
+                "kind": "array",
+                "array": "T2",
+                "array_index": 6,
+                "anchor": "R_fiducial"
+              }
+            },
+            {
+              "context": "",
+              "region_type": "fluid_cell",
+              "id": "T2-7",
+              "array": "T2",
+              "solute": "MnCl2",
+              "concentration": "0.14501 mM",
+              "sealed_volume_ml": 1.2,
+              "container": "polypropylene cube",
+              "reference_values": [
+                {
+                  "context": "",
+                  "quantity": "T1",
+                  "value": 830.34,
+                  "unit": "ms",
+                  "unc_minus": 817.55,
+                  "unc_plus": 843.54,
+                  "field_strength_T": 3.0,
+                  "temp_C": 20.0,
+                  "citation": ""
+                },
+                {
+                  "context": "",
+                  "quantity": "T2",
+                  "value": 65.31,
+                  "unit": "ms",
+                  "unc_minus": 64.01,
+                  "unc_plus": 66.67,
+                  "field_strength_T": 3.0,
+                  "temp_C": 20.0,
+                  "citation": ""
+                }
+              ],
+              "layout": {
+                "kind": "array",
+                "array": "T2",
+                "array_index": 7,
+                "anchor": "R_fiducial"
+              }
+            },
+            {
+              "context": "",
+              "region_type": "fluid_cell",
+              "id": "T2-8",
+              "array": "T2",
+              "solute": "MnCl2",
+              "concentration": "0.20722 mM",
+              "sealed_volume_ml": 1.2,
+              "container": "polypropylene cube",
+              "reference_values": [
+                {
+                  "context": "",
+                  "quantity": "T1",
+                  "value": 625.02,
+                  "unit": "ms",
+                  "unc_minus": 615.35,
+                  "unc_plus": 634.99,
+                  "field_strength_T": 3.0,
+                  "temp_C": 20.0,
+                  "citation": ""
+                },
+                {
+                  "context": "",
+                  "quantity": "T2",
+                  "value": 45.75,
+                  "unit": "ms",
+                  "unc_minus": 44.9,
+                  "unc_plus": 46.64,
+                  "field_strength_T": 3.0,
+                  "temp_C": 20.0,
+                  "citation": ""
+                }
+              ],
+              "layout": {
+                "kind": "array",
+                "array": "T2",
+                "array_index": 8,
+                "anchor": "R_fiducial"
+              }
+            },
+            {
+              "context": "",
+              "region_type": "fluid_cell",
+              "id": "T2-10",
+              "array": "T2",
+              "solute": "MnCl2",
+              "concentration": "0.42123 mM",
+              "sealed_volume_ml": 1.2,
+              "container": "polypropylene cube",
+              "reference_values": [
+                {
+                  "context": "",
+                  "quantity": "T1",
+                  "value": 341.88,
+                  "unit": "ms",
+                  "unc_minus": 336.1,
+                  "unc_plus": 347.85,
+                  "field_strength_T": 3.0,
+                  "temp_C": 20.0,
+                  "citation": ""
+                },
+                {
+                  "context": "",
+                  "quantity": "T2",
+                  "value": 22.84,
+                  "unit": "ms",
+                  "unc_minus": 22.42,
+                  "unc_plus": 23.28,
+                  "field_strength_T": 3.0,
+                  "temp_C": 20.0,
+                  "citation": ""
+                }
+              ],
+              "layout": {
+                "kind": "array",
+                "array": "T2",
+                "array_index": 9,
+                "anchor": "R_fiducial"
+              }
+            },
+            {
+              "context": "",
+              "region_type": "fluid_cell",
+              "id": "T2-11",
+              "array": "T2",
+              "solute": "MnCl2",
+              "concentration": "0.59903 mM",
+              "sealed_volume_ml": 1.2,
+              "container": "polypropylene cube",
+              "reference_values": [
+                {
+                  "context": "",
+                  "quantity": "T1",
+                  "value": 248.12,
+                  "unit": "ms",
+                  "unc_minus": 244.31,
+                  "unc_plus": 252.05,
+                  "field_strength_T": 3.0,
+                  "temp_C": 20.0,
+                  "citation": ""
+                },
+                {
+                  "context": "",
+                  "quantity": "T2",
+                  "value": 16.11,
+                  "unit": "ms",
+                  "unc_minus": 15.85,
+                  "unc_plus": 16.39,
+                  "field_strength_T": 3.0,
+                  "temp_C": 20.0,
+                  "citation": ""
+                }
+              ],
+              "layout": {
+                "kind": "array",
+                "array": "T2",
+                "array_index": 10,
+                "anchor": "R_fiducial"
+              }
+            },
+            {
+              "context": "",
+              "region_type": "fluid_cell",
+              "id": "T2-12",
+              "array": "T2",
+              "solute": "MnCl2",
+              "concentration": "0.84899 mM",
+              "sealed_volume_ml": 1.2,
+              "container": "polypropylene cube",
+              "reference_values": [
+                {
+                  "context": "",
+                  "quantity": "T1",
+                  "value": 179.77,
+                  "unit": "ms",
+                  "unc_minus": 175.8,
+                  "unc_plus": 183.92,
+                  "field_strength_T": 3.0,
+                  "temp_C": 20.0,
+                  "citation": ""
+                },
+                {
+                  "context": "",
+                  "quantity": "T2",
+                  "value": 11.44,
+                  "unit": "ms",
+                  "unc_minus": 11.17,
+                  "unc_plus": 11.72,
+                  "field_strength_T": 3.0,
+                  "temp_C": 20.0,
+                  "citation": ""
+                }
+              ],
+              "layout": {
+                "kind": "array",
+                "array": "T2",
+                "array_index": 11,
+                "anchor": "R_fiducial"
+              }
+            },
+            {
+              "context": "",
+              "region_type": "fluid_cell",
+              "id": "T2-14",
+              "array": "T2",
+              "solute": "MnCl2",
+              "concentration": "1.704 mM",
+              "sealed_volume_ml": 1.2,
+              "container": "polypropylene cube",
+              "reference_values": [
+                {
+                  "context": "",
+                  "quantity": "T1",
+                  "value": 92.16,
+                  "unit": "ms",
+                  "unc_minus": 90.59,
+                  "unc_plus": 93.79,
+                  "field_strength_T": 3.0,
+                  "temp_C": 20.0,
+                  "citation": ""
+                },
+                {
+                  "context": "",
+                  "quantity": "T2",
+                  "value": 5.72,
+                  "unit": "ms",
+                  "unc_minus": 5.62,
+                  "unc_plus": 5.82,
+                  "field_strength_T": 3.0,
+                  "temp_C": 20.0,
+                  "citation": ""
+                }
+              ],
+              "layout": {
+                "kind": "array",
+                "array": "T2",
+                "array_index": 12,
+                "anchor": "R_fiducial"
+              }
+            }
+          ]
+        },
+        {
+          "context": "Proton density is set by dilution with deuterium oxide (D2O). Deuterium's resonance is far off the 1H frequency, so D2O contributes essentially no 1H signal; the '% H2O' label is the proton-density fraction directly. Known H2O:D2O volume ratios give a linear PD ladder from ~2.5% to 100% with no paramagnetic doping - PD here is a mixing ratio, not a relaxation effect, which is why this axis carries a density uncertainty rather than a relaxation value. [manual: D2O identity, % H2O ladder, density uncertainties] [physics: deuterium off-resonance, linear proton-density mixing]",
+          "category": "PD Array (D2O)",
+          "count": 12,
+          "grid_scheme": "light-blue cubes; ~2.5-100% H2O",
+          "fixtures": [
+            {
+              "context": "",
+              "region_type": "fluid_cell",
+              "id": "PD-1",
+              "array": "PD",
+              "solute": "D2O",
+              "concentration": "2.5% H2O",
+              "sealed_volume_ml": 1.2,
+              "container": "polypropylene cube",
+              "reference_values": [
+                {
+                  "context": "",
+                  "quantity": "PD",
+                  "value": 2.5,
+                  "unit": "% H2O",
+                  "unc_minus": 2.45,
+                  "unc_plus": 2.55,
+                  "field_strength_T": 3.0,
+                  "citation": ""
+                }
+              ],
+              "layout": {
+                "kind": "array",
+                "array": "PD",
+                "array_index": 1,
+                "anchor": "R_fiducial"
+              }
+            },
+            {
+              "context": "",
+              "region_type": "fluid_cell",
+              "id": "PD-2",
+              "array": "PD",
+              "solute": "D2O",
+              "concentration": "10.0% H2O",
+              "sealed_volume_ml": 1.2,
+              "container": "polypropylene cube",
+              "reference_values": [
+                {
+                  "context": "",
+                  "quantity": "PD",
+                  "value": 10.0,
+                  "unit": "% H2O",
+                  "unc_minus": 9.8,
+                  "unc_plus": 10.2,
+                  "field_strength_T": 3.0,
+                  "citation": ""
+                }
+              ],
+              "layout": {
+                "kind": "array",
+                "array": "PD",
+                "array_index": 2,
+                "anchor": "R_fiducial"
+              }
+            },
+            {
+              "context": "",
+              "region_type": "fluid_cell",
+              "id": "PD-3",
+              "array": "PD",
+              "solute": "D2O",
+              "concentration": "17.5% H2O",
+              "sealed_volume_ml": 1.2,
+              "container": "polypropylene cube",
+              "reference_values": [
+                {
+                  "context": "",
+                  "quantity": "PD",
+                  "value": 17.5,
+                  "unit": "% H2O",
+                  "unc_minus": 17.15,
+                  "unc_plus": 17.85,
+                  "field_strength_T": 3.0,
+                  "citation": ""
+                }
+              ],
+              "layout": {
+                "kind": "array",
+                "array": "PD",
+                "array_index": 3,
+                "anchor": "R_fiducial"
+              }
+            },
+            {
+              "context": "",
+              "region_type": "fluid_cell",
+              "id": "PD-5",
+              "array": "PD",
+              "solute": "D2O",
+              "concentration": "32.5% H2O",
+              "sealed_volume_ml": 1.2,
+              "container": "polypropylene cube",
+              "reference_values": [
+                {
+                  "context": "",
+                  "quantity": "PD",
+                  "value": 32.5,
+                  "unit": "% H2O",
+                  "unc_minus": 31.85,
+                  "unc_plus": 33.15,
+                  "field_strength_T": 3.0,
+                  "citation": ""
+                }
+              ],
+              "layout": {
+                "kind": "array",
+                "array": "PD",
+                "array_index": 4,
+                "anchor": "R_fiducial"
+              }
+            },
+            {
+              "context": "",
+              "region_type": "fluid_cell",
+              "id": "PD-6",
+              "array": "PD",
+              "solute": "D2O",
+              "concentration": "40.0% H2O",
+              "sealed_volume_ml": 1.2,
+              "container": "polypropylene cube",
+              "reference_values": [
+                {
+                  "context": "",
+                  "quantity": "PD",
+                  "value": 40.0,
+                  "unit": "% H2O",
+                  "unc_minus": 39.2,
+                  "unc_plus": 40.8,
+                  "field_strength_T": 3.0,
+                  "citation": ""
+                }
+              ],
+              "layout": {
+                "kind": "array",
+                "array": "PD",
+                "array_index": 5,
+                "anchor": "R_fiducial"
+              }
+            },
+            {
+              "context": "",
+              "region_type": "fluid_cell",
+              "id": "PD-7",
+              "array": "PD",
+              "solute": "D2O",
+              "concentration": "47.5% H2O",
+              "sealed_volume_ml": 1.2,
+              "container": "polypropylene cube",
+              "reference_values": [
+                {
+                  "context": "",
+                  "quantity": "PD",
+                  "value": 47.5,
+                  "unit": "% H2O",
+                  "unc_minus": 46.55,
+                  "unc_plus": 48.45,
+                  "field_strength_T": 3.0,
+                  "citation": ""
+                }
+              ],
+              "layout": {
+                "kind": "array",
+                "array": "PD",
+                "array_index": 6,
+                "anchor": "R_fiducial"
+              }
+            },
+            {
+              "context": "",
+              "region_type": "fluid_cell",
+              "id": "PD-8",
+              "array": "PD",
+              "solute": "D2O",
+              "concentration": "55.0% H2O",
+              "sealed_volume_ml": 1.2,
+              "container": "polypropylene cube",
+              "reference_values": [
+                {
+                  "context": "",
+                  "quantity": "PD",
+                  "value": 55.0,
+                  "unit": "% H2O",
+                  "unc_minus": 53.9,
+                  "unc_plus": 56.1,
+                  "field_strength_T": 3.0,
+                  "citation": ""
+                }
+              ],
+              "layout": {
+                "kind": "array",
+                "array": "PD",
+                "array_index": 7,
+                "anchor": "R_fiducial"
+              }
+            },
+            {
+              "context": "",
+              "region_type": "fluid_cell",
+              "id": "PD-9",
+              "array": "PD",
+              "solute": "D2O",
+              "concentration": "62.5% H2O",
+              "sealed_volume_ml": 1.2,
+              "container": "polypropylene cube",
+              "reference_values": [
+                {
+                  "context": "",
+                  "quantity": "PD",
+                  "value": 62.5,
+                  "unit": "% H2O",
+                  "unc_minus": 61.3,
+                  "unc_plus": 63.7,
+                  "field_strength_T": 3.0,
+                  "citation": ""
+                }
+              ],
+              "layout": {
+                "kind": "array",
+                "array": "PD",
+                "array_index": 8,
+                "anchor": "R_fiducial"
+              }
+            },
+            {
+              "context": "",
+              "region_type": "fluid_cell",
+              "id": "PD-10",
+              "array": "PD",
+              "solute": "D2O",
+              "concentration": "70.0% H2O",
+              "sealed_volume_ml": 1.2,
+              "container": "polypropylene cube",
+              "reference_values": [
+                {
+                  "context": "",
+                  "quantity": "PD",
+                  "value": 70.0,
+                  "unit": "% H2O",
+                  "unc_minus": 68.6,
+                  "unc_plus": 71.4,
+                  "field_strength_T": 3.0,
+                  "citation": ""
+                }
+              ],
+              "layout": {
+                "kind": "array",
+                "array": "PD",
+                "array_index": 9,
+                "anchor": "R_fiducial"
+              }
+            },
+            {
+              "context": "",
+              "region_type": "fluid_cell",
+              "id": "PD-11",
+              "array": "PD",
+              "solute": "D2O",
+              "concentration": "77.5% H2O",
+              "sealed_volume_ml": 1.2,
+              "container": "polypropylene cube",
+              "reference_values": [
+                {
+                  "context": "",
+                  "quantity": "PD",
+                  "value": 77.5,
+                  "unit": "% H2O",
+                  "unc_minus": 75.9,
+                  "unc_plus": 79.1,
+                  "field_strength_T": 3.0,
+                  "citation": ""
+                }
+              ],
+              "layout": {
+                "kind": "array",
+                "array": "PD",
+                "array_index": 10,
+                "anchor": "R_fiducial"
+              }
+            },
+            {
+              "context": "",
+              "region_type": "fluid_cell",
+              "id": "PD-12",
+              "array": "PD",
+              "solute": "D2O",
+              "concentration": "85.0% H2O",
+              "sealed_volume_ml": 1.2,
+              "container": "polypropylene cube",
+              "reference_values": [
+                {
+                  "context": "",
+                  "quantity": "PD",
+                  "value": 85.0,
+                  "unit": "% H2O",
+                  "unc_minus": 83.3,
+                  "unc_plus": 86.7,
+                  "field_strength_T": 3.0,
+                  "citation": ""
+                }
+              ],
+              "layout": {
+                "kind": "array",
+                "array": "PD",
+                "array_index": 11,
+                "anchor": "R_fiducial"
+              }
+            },
+            {
+              "context": "",
+              "region_type": "fluid_cell",
+              "id": "PD-14",
+              "array": "PD",
+              "solute": "D2O",
+              "concentration": "100.0% H2O",
+              "sealed_volume_ml": 1.2,
+              "container": "polypropylene cube",
+              "reference_values": [
+                {
+                  "context": "",
+                  "quantity": "PD",
+                  "value": 100.0,
+                  "unit": "% H2O",
+                  "unc_minus": 98.0,
+                  "unc_plus": 102.0,
+                  "field_strength_T": 3.0,
+                  "citation": ""
+                }
+              ],
+              "layout": {
+                "kind": "array",
+                "array": "PD",
+                "array_index": 12,
+                "anchor": "R_fiducial"
+              }
+            }
+          ]
+        },
+        {
+          "context": "ADC array fill: polyvinylpyrrolidone (PVP), a water-soluble polymer. Raising PVP concentration increases viscosity and crowds the water, obstructing self-diffusion so the apparent diffusion coefficient falls monotonically (~1.98 down to ~0.28 um2/ms across 0-50% PVP). ADC is strongly temperature-dependent (diffusion is thermally activated), so reference values are pinned to 19.5 C and cite Amousandeh et al. 2022; applying them at a different scanner-room temperature requires a temperature correction. [manual: PVP identity, % ladder, ADC values, 19.5C reference, Amousandeh citation] [physics: viscosity-obstruction lowering of ADC, thermal activation]",
+          "category": "ADC Array (PVP)",
+          "count": 6,
+          "grid_scheme": "yellow cubes; ~0-50% PVP",
+          "fixtures": [
+            {
+              "context": "",
+              "region_type": "fluid_cell",
+              "id": "PVP-0",
+              "array": "ADC",
+              "solute": "PVP",
+              "concentration": "0.0% PVP",
+              "sealed_volume_ml": 1.2,
+              "container": "polypropylene cube",
+              "reference_values": [
+                {
+                  "context": "",
+                  "quantity": "ADC",
+                  "value": 1.975,
+                  "unit": "um2/ms",
+                  "unc_minus": 1.971,
+                  "unc_plus": 1.979,
+                  "field_strength_T": 3.0,
+                  "temp_C": 19.5,
+                  "citation": "Amousandeh et al. 2022"
+                }
+              ],
+              "layout": {
+                "kind": "array",
+                "array": "ADC",
+                "array_index": 1,
+                "anchor": "R_fiducial"
+              }
+            },
+            {
+              "context": "",
+              "region_type": "fluid_cell",
+              "id": "PVP-1",
+              "array": "ADC",
+              "solute": "PVP",
+              "concentration": "10.0% PVP",
+              "sealed_volume_ml": 1.2,
+              "container": "polypropylene cube",
+              "reference_values": [
+                {
+                  "context": "",
+                  "quantity": "ADC",
+                  "value": 1.545,
+                  "unit": "um2/ms",
+                  "unc_minus": 1.54,
+                  "unc_plus": 1.55,
+                  "field_strength_T": 3.0,
+                  "temp_C": 19.5,
+                  "citation": "Amousandeh et al. 2022"
+                }
+              ],
+              "layout": {
+                "kind": "array",
+                "array": "ADC",
+                "array_index": 2,
+                "anchor": "R_fiducial"
+              }
+            },
+            {
+              "context": "",
+              "region_type": "fluid_cell",
+              "id": "PVP-2",
+              "array": "ADC",
+              "solute": "PVP",
+              "concentration": "20.0% PVP",
+              "sealed_volume_ml": 1.2,
+              "container": "polypropylene cube",
+              "reference_values": [
+                {
+                  "context": "",
+                  "quantity": "ADC",
+                  "value": 1.162,
+                  "unit": "um2/ms",
+                  "unc_minus": 1.159,
+                  "unc_plus": 1.165,
+                  "field_strength_T": 3.0,
+                  "temp_C": 19.5,
+                  "citation": "Amousandeh et al. 2022"
+                }
+              ],
+              "layout": {
+                "kind": "array",
+                "array": "ADC",
+                "array_index": 3,
+                "anchor": "R_fiducial"
+              }
+            },
+            {
+              "context": "",
+              "region_type": "fluid_cell",
+              "id": "PVP-3",
+              "array": "ADC",
+              "solute": "PVP",
+              "concentration": "30.0% PVP",
+              "sealed_volume_ml": 1.2,
+              "container": "polypropylene cube",
+              "reference_values": [
+                {
+                  "context": "",
+                  "quantity": "ADC",
+                  "value": 0.832,
+                  "unit": "um2/ms",
+                  "unc_minus": 0.829,
+                  "unc_plus": 0.835,
+                  "field_strength_T": 3.0,
+                  "temp_C": 19.5,
+                  "citation": "Amousandeh et al. 2022"
+                }
+              ],
+              "layout": {
+                "kind": "array",
+                "array": "ADC",
+                "array_index": 4,
+                "anchor": "R_fiducial"
+              }
+            },
+            {
+              "context": "",
+              "region_type": "fluid_cell",
+              "id": "PVP-4",
+              "array": "ADC",
+              "solute": "PVP",
+              "concentration": "40.0% PVP",
+              "sealed_volume_ml": 1.2,
+              "container": "polypropylene cube",
+              "reference_values": [
+                {
+                  "context": "",
+                  "quantity": "ADC",
+                  "value": 0.529,
+                  "unit": "um2/ms",
+                  "unc_minus": 0.527,
+                  "unc_plus": 0.531,
+                  "field_strength_T": 3.0,
+                  "temp_C": 19.5,
+                  "citation": "Amousandeh et al. 2022"
+                }
+              ],
+              "layout": {
+                "kind": "array",
+                "array": "ADC",
+                "array_index": 5,
+                "anchor": "R_fiducial"
+              }
+            },
+            {
+              "context": "",
+              "region_type": "fluid_cell",
+              "id": "PVP-5",
+              "array": "ADC",
+              "solute": "PVP",
+              "concentration": "50.0% PVP",
+              "sealed_volume_ml": 1.2,
+              "container": "polypropylene cube",
+              "reference_values": [
+                {
+                  "context": "",
+                  "quantity": "ADC",
+                  "value": 0.276,
+                  "unit": "um2/ms",
+                  "unc_minus": 0.271,
+                  "unc_plus": 0.281,
+                  "field_strength_T": 3.0,
+                  "temp_C": 19.5,
+                  "citation": "Amousandeh et al. 2022"
+                }
+              ],
+              "layout": {
+                "kind": "array",
+                "array": "ADC",
+                "array_index": 6,
+                "anchor": "R_fiducial"
+              }
+            }
+          ]
+        },
+        {
+          "context": "Five copper(II) sulfate cubes serve as fiducial markers. Cu2+ is paramagnetic and shortens T1, giving bright, consistent signal points useful for confirming array registration within the slice. They are physical 1.2 ml cubes counted among the 47, distinct from the MR-readable chiral 'R' orientation marker held at disk level. [manual: CuSO4 identity, count, fiducial role] [physics: Cu2+ T1 shortening / bright appearance]",
+          "category": "CuSO4 Fiducials",
+          "count": 5,
+          "grid_scheme": "",
+          "fixtures": [
+            {
+              "context": "",
+              "region_type": "fluid_cell",
+              "id": "CuSO4-1",
+              "array": "fiducial",
+              "solute": "CuSO4",
+              "sealed_volume_ml": 1.2,
+              "container": "polypropylene cube",
+              "reference_values": [],
+              "layout": {
+                "kind": "array",
+                "array": "fiducial",
+                "array_index": 1,
+                "anchor": "R_fiducial"
+              }
+            },
+            {
+              "context": "",
+              "region_type": "fluid_cell",
+              "id": "CuSO4-2",
+              "array": "fiducial",
+              "solute": "CuSO4",
+              "sealed_volume_ml": 1.2,
+              "container": "polypropylene cube",
+              "reference_values": [],
+              "layout": {
+                "kind": "array",
+                "array": "fiducial",
+                "array_index": 2,
+                "anchor": "R_fiducial"
+              }
+            },
+            {
+              "context": "",
+              "region_type": "fluid_cell",
+              "id": "CuSO4-3",
+              "array": "fiducial",
+              "solute": "CuSO4",
+              "sealed_volume_ml": 1.2,
+              "container": "polypropylene cube",
+              "reference_values": [],
+              "layout": {
+                "kind": "array",
+                "array": "fiducial",
+                "array_index": 3,
+                "anchor": "R_fiducial"
+              }
+            },
+            {
+              "context": "",
+              "region_type": "fluid_cell",
+              "id": "CuSO4-4",
+              "array": "fiducial",
+              "solute": "CuSO4",
+              "sealed_volume_ml": 1.2,
+              "container": "polypropylene cube",
+              "reference_values": [],
+              "layout": {
+                "kind": "array",
+                "array": "fiducial",
+                "array_index": 4,
+                "anchor": "R_fiducial"
+              }
+            },
+            {
+              "context": "",
+              "region_type": "fluid_cell",
+              "id": "CuSO4-5",
+              "array": "fiducial",
+              "solute": "CuSO4",
+              "sealed_volume_ml": 1.2,
+              "container": "polypropylene cube",
+              "reference_values": [],
+              "layout": {
+                "kind": "array",
+                "array": "fiducial",
+                "array_index": 5,
+                "anchor": "R_fiducial"
+              }
+            }
+          ]
+        }
+      ],
+      "fiducials": [
+        {
+          "context": "MR-readable chiral 'R' marker; being chiral it fixes both rotation and reflection/handedness (it looks different mirrored), so it disambiguates in-plane orientation and radiological/neurological convention. All layout addresses on this disk are defined relative to it. [manual: R marker presence and purpose] [physics: chirality fixes rotation + handedness]",
+          "source": {
+            "page": 13,
+            "section": "3.3",
+            "origin": "manual",
+            "note": ""
+          },
+          "region_type": "fiducial",
+          "id": "R_marker",
+          "purpose": "orientation",
+          "is_chiral_marker": true
+        }
+      ],
+      "protocol": {
+        "context": "Relaxometry from a single centred slice: 10 inversion-recovery series (TI 35-3000 ms) sample the T1 recovery curve, a multi-TE series (TE 10-320 ms) samples T2 decay, a two-measurement spin-echo gives PD, and a 6-direction 3-shell series (b=500/900/2000) gives ADC. Single-slice acquisition assumes the slice is centred on the cube midplane per the R-anchored alignment. [manual: series list, TIs, TEs, b-values, slice] [physics: IR samples T1 recovery, multi-TE samples T2 decay]",
+        "summary": "13 series — 1 PD (2 meas), 10 T1 IR, 1 T2 multi-TE, 1 ADC (b=500/900/2000)",
+        "series": [
+          {
+            "context": "",
+            "name": "PD_SE_2Measurements",
+            "voxel_mm": "1.0 x 1.0 x 6.0",
+            "tr_ms": 5000.0,
+            "te_ms": 11.0,
+            "b_values": [],
+            "n_slices": 1,
+            "slice_thickness_mm": 6.0,
+            "orientation": "Transversal, A>>P"
+          },
+          {
+            "context": "",
+            "name": "t1_IR_0035",
+            "voxel_mm": "1.0 x 1.0 x 6.0",
+            "tr_ms": 4500.0,
+            "te_ms": 8.2,
+            "ti_ms": 35.0,
+            "b_values": [],
+            "n_slices": 1,
+            "slice_thickness_mm": 6.0,
+            "orientation": "Transversal, A>>P"
+          },
+          {
+            "context": "",
+            "name": "t1_IR_0075",
+            "voxel_mm": "1.0 x 1.0 x 6.0",
+            "tr_ms": 4500.0,
+            "te_ms": 8.2,
+            "ti_ms": 75.0,
+            "b_values": [],
+            "n_slices": 1,
+            "slice_thickness_mm": 6.0,
+            "orientation": "Transversal, A>>P"
+          },
+          {
+            "context": "",
+            "name": "t1_IR_0100",
+            "voxel_mm": "1.0 x 1.0 x 6.0",
+            "tr_ms": 4500.0,
+            "te_ms": 8.2,
+            "ti_ms": 100.0,
+            "b_values": [],
+            "n_slices": 1,
+            "slice_thickness_mm": 6.0,
+            "orientation": "Transversal, A>>P"
+          },
+          {
+            "context": "",
+            "name": "t1_IR_0125",
+            "voxel_mm": "1.0 x 1.0 x 6.0",
+            "tr_ms": 4500.0,
+            "te_ms": 8.2,
+            "ti_ms": 125.0,
+            "b_values": [],
+            "n_slices": 1,
+            "slice_thickness_mm": 6.0,
+            "orientation": "Transversal, A>>P"
+          },
+          {
+            "context": "",
+            "name": "t1_IR_0150",
+            "voxel_mm": "1.0 x 1.0 x 6.0",
+            "tr_ms": 4500.0,
+            "te_ms": 8.2,
+            "ti_ms": 150.0,
+            "b_values": [],
+            "n_slices": 1,
+            "slice_thickness_mm": 6.0,
+            "orientation": "Transversal, A>>P"
+          },
+          {
+            "context": "",
+            "name": "t1_IR_0250",
+            "voxel_mm": "1.0 x 1.0 x 6.0",
+            "tr_ms": 4500.0,
+            "te_ms": 8.2,
+            "ti_ms": 250.0,
+            "b_values": [],
+            "n_slices": 1,
+            "slice_thickness_mm": 6.0,
+            "orientation": "Transversal, A>>P"
+          },
+          {
+            "context": "",
+            "name": "t1_IR_1000",
+            "voxel_mm": "1.0 x 1.0 x 6.0",
+            "tr_ms": 4500.0,
+            "te_ms": 8.2,
+            "ti_ms": 1000.0,
+            "b_values": [],
+            "n_slices": 1,
+            "slice_thickness_mm": 6.0,
+            "orientation": "Transversal, A>>P"
+          },
+          {
+            "context": "",
+            "name": "t1_IR_1500",
+            "voxel_mm": "1.0 x 1.0 x 6.0",
+            "tr_ms": 4500.0,
+            "te_ms": 8.2,
+            "ti_ms": 1500.0,
+            "b_values": [],
+            "n_slices": 1,
+            "slice_thickness_mm": 6.0,
+            "orientation": "Transversal, A>>P"
+          },
+          {
+            "context": "",
+            "name": "t1_IR_2000",
+            "voxel_mm": "1.0 x 1.0 x 6.0",
+            "tr_ms": 4500.0,
+            "te_ms": 8.2,
+            "ti_ms": 2000.0,
+            "b_values": [],
+            "n_slices": 1,
+            "slice_thickness_mm": 6.0,
+            "orientation": "Transversal, A>>P"
+          },
+          {
+            "context": "",
+            "name": "t1_IR_3000",
+            "voxel_mm": "1.0 x 1.0 x 6.0",
+            "tr_ms": 4500.0,
+            "te_ms": 8.2,
+            "ti_ms": 3000.0,
+            "b_values": [],
+            "n_slices": 1,
+            "slice_thickness_mm": 6.0,
+            "orientation": "Transversal, A>>P"
+          },
+          {
+            "context": "TE 10.0->320.0 in 10ms increments",
+            "name": "T2_SCLFCT_0.5",
+            "voxel_mm": "1.0 x 1.0 x 6.0",
+            "tr_ms": 5000.0,
+            "b_values": [],
+            "n_slices": 1,
+            "slice_thickness_mm": 6.0,
+            "orientation": "Transversal, R>>L"
+          },
+          {
+            "context": "",
+            "name": "ISO_BLOCK_DIFF_6-DIR_B500+900+2000_AP_SCALE1_0_TE_60",
+            "voxel_mm": "1.5 x 1.5 x 5.0",
+            "tr_ms": 7000.0,
+            "te_ms": 60.0,
+            "b_values": [
+              500,
+              900,
+              2000
+            ],
+            "directions": 6,
+            "n_slices": 1,
+            "slice_thickness_mm": 5.0,
+            "orientation": "Transversal, A>>P"
+          }
+        ]
+      },
+      "hardware": []
+    },
+    {
+      "context": "The spatial-homogeneity disk checks that diffusion metrics are stable across the whole phantom diameter, not just at iso-centre. 65 nominally identical 4x4x20 mm round-Taxon fixtures (104 um target fibre diameter, 600128 holes/mm2, ~1470 fibres each) are oriented in separate X, Y, Z planes; X and Y fixtures interlock into tracts spanning the diameter, with Z fixtures interspersed to form a grid. Because every fixture is nominally identical, spatial variation in measured FA/MD across the disk isolates system imperfections - gradient nonlinearity, B0/B1 inhomogeneity, eddy currents - rather than true microstructure differences. [manual: fixture count/size/fibre spec, X/Y/Z arrangement] [physics: identical-fixture design isolates spatial system nonuniformity]",
+      "source": {
+        "page": 16,
+        "section": "3.4",
+        "origin": "manual",
+        "note": ""
+      },
+      "name": "Anisotropic Spatial Homogeneity Diffusion Disk",
+      "stack_index": 4,
+      "band": "lower",
+      "optional": false,
+      "material": "round nylon Taxon fixtures, 4x4x20 mm, interlocking X/Y/Z tracts",
+      "metrics_enabled": [
+        "FA",
+        "MD",
+        "spatial_homogeneity",
+        "fiber_tracking"
+      ],
+      "test_regions": [
+        {
+          "context": "22 X-oriented fixtures: two lateral tracts of 5 and two central tracts of 6, interlocking to approximate continuous fibres spanning the disk diameter along X. Comparing FA along an X tract from centre to edge exposes direction-specific gradient nonlinearity. [manual: arrangement] [physics: along-tract FA profile reveals X-gradient nonuniformity]",
+          "category": "X-oriented fixtures",
+          "count": 22,
+          "grid_scheme": "2 lateral tracts of 5 + 2 central tracts of 6",
+          "fixtures": [
+            {
+              "context": "",
+              "region_type": "fiber_tract",
+              "id": "X_lat1_1",
+              "fiber_type": "round_taxon",
+              "tract_size_mm": 4.0,
+              "length_mm": 20.0,
+              "density_pct": 100.0,
+              "fiber_diameter_um": 104.0,
+              "pore_description": "1470 round Taxon fibers/fixture; sub-micron hollow-tube ID",
+              "hole_density_per_mm2": 600128,
+              "orientation": "X",
+              "layout": {
+                "kind": "axis_role",
+                "orientation": "X",
+                "band": "lateral",
+                "index": 1,
+                "anchor": "R_fiducial"
+              }
+            },
+            {
+              "context": "",
+              "region_type": "fiber_tract",
+              "id": "X_lat1_2",
+              "fiber_type": "round_taxon",
+              "tract_size_mm": 4.0,
+              "length_mm": 20.0,
+              "density_pct": 100.0,
+              "fiber_diameter_um": 104.0,
+              "pore_description": "1470 round Taxon fibers/fixture; sub-micron hollow-tube ID",
+              "hole_density_per_mm2": 600128,
+              "orientation": "X",
+              "layout": {
+                "kind": "axis_role",
+                "orientation": "X",
+                "band": "lateral",
+                "index": 2,
+                "anchor": "R_fiducial"
+              }
+            },
+            {
+              "context": "",
+              "region_type": "fiber_tract",
+              "id": "X_lat1_3",
+              "fiber_type": "round_taxon",
+              "tract_size_mm": 4.0,
+              "length_mm": 20.0,
+              "density_pct": 100.0,
+              "fiber_diameter_um": 104.0,
+              "pore_description": "1470 round Taxon fibers/fixture; sub-micron hollow-tube ID",
+              "hole_density_per_mm2": 600128,
+              "orientation": "X",
+              "layout": {
+                "kind": "axis_role",
+                "orientation": "X",
+                "band": "lateral",
+                "index": 3,
+                "anchor": "R_fiducial"
+              }
+            },
+            {
+              "context": "",
+              "region_type": "fiber_tract",
+              "id": "X_lat1_4",
+              "fiber_type": "round_taxon",
+              "tract_size_mm": 4.0,
+              "length_mm": 20.0,
+              "density_pct": 100.0,
+              "fiber_diameter_um": 104.0,
+              "pore_description": "1470 round Taxon fibers/fixture; sub-micron hollow-tube ID",
+              "hole_density_per_mm2": 600128,
+              "orientation": "X",
+              "layout": {
+                "kind": "axis_role",
+                "orientation": "X",
+                "band": "lateral",
+                "index": 4,
+                "anchor": "R_fiducial"
+              }
+            },
+            {
+              "context": "",
+              "region_type": "fiber_tract",
+              "id": "X_lat1_5",
+              "fiber_type": "round_taxon",
+              "tract_size_mm": 4.0,
+              "length_mm": 20.0,
+              "density_pct": 100.0,
+              "fiber_diameter_um": 104.0,
+              "pore_description": "1470 round Taxon fibers/fixture; sub-micron hollow-tube ID",
+              "hole_density_per_mm2": 600128,
+              "orientation": "X",
+              "layout": {
+                "kind": "axis_role",
+                "orientation": "X",
+                "band": "lateral",
+                "index": 5,
+                "anchor": "R_fiducial"
+              }
+            },
+            {
+              "context": "",
+              "region_type": "fiber_tract",
+              "id": "X_lat2_1",
+              "fiber_type": "round_taxon",
+              "tract_size_mm": 4.0,
+              "length_mm": 20.0,
+              "density_pct": 100.0,
+              "fiber_diameter_um": 104.0,
+              "pore_description": "1470 round Taxon fibers/fixture; sub-micron hollow-tube ID",
+              "hole_density_per_mm2": 600128,
+              "orientation": "X",
+              "layout": {
+                "kind": "axis_role",
+                "orientation": "X",
+                "band": "lateral",
+                "index": 6,
+                "anchor": "R_fiducial"
+              }
+            },
+            {
+              "context": "",
+              "region_type": "fiber_tract",
+              "id": "X_lat2_2",
+              "fiber_type": "round_taxon",
+              "tract_size_mm": 4.0,
+              "length_mm": 20.0,
+              "density_pct": 100.0,
+              "fiber_diameter_um": 104.0,
+              "pore_description": "1470 round Taxon fibers/fixture; sub-micron hollow-tube ID",
+              "hole_density_per_mm2": 600128,
+              "orientation": "X",
+              "layout": {
+                "kind": "axis_role",
+                "orientation": "X",
+                "band": "lateral",
+                "index": 7,
+                "anchor": "R_fiducial"
+              }
+            },
+            {
+              "context": "",
+              "region_type": "fiber_tract",
+              "id": "X_lat2_3",
+              "fiber_type": "round_taxon",
+              "tract_size_mm": 4.0,
+              "length_mm": 20.0,
+              "density_pct": 100.0,
+              "fiber_diameter_um": 104.0,
+              "pore_description": "1470 round Taxon fibers/fixture; sub-micron hollow-tube ID",
+              "hole_density_per_mm2": 600128,
+              "orientation": "X",
+              "layout": {
+                "kind": "axis_role",
+                "orientation": "X",
+                "band": "lateral",
+                "index": 8,
+                "anchor": "R_fiducial"
+              }
+            },
+            {
+              "context": "",
+              "region_type": "fiber_tract",
+              "id": "X_lat2_4",
+              "fiber_type": "round_taxon",
+              "tract_size_mm": 4.0,
+              "length_mm": 20.0,
+              "density_pct": 100.0,
+              "fiber_diameter_um": 104.0,
+              "pore_description": "1470 round Taxon fibers/fixture; sub-micron hollow-tube ID",
+              "hole_density_per_mm2": 600128,
+              "orientation": "X",
+              "layout": {
+                "kind": "axis_role",
+                "orientation": "X",
+                "band": "lateral",
+                "index": 9,
+                "anchor": "R_fiducial"
+              }
+            },
+            {
+              "context": "",
+              "region_type": "fiber_tract",
+              "id": "X_lat2_5",
+              "fiber_type": "round_taxon",
+              "tract_size_mm": 4.0,
+              "length_mm": 20.0,
+              "density_pct": 100.0,
+              "fiber_diameter_um": 104.0,
+              "pore_description": "1470 round Taxon fibers/fixture; sub-micron hollow-tube ID",
+              "hole_density_per_mm2": 600128,
+              "orientation": "X",
+              "layout": {
+                "kind": "axis_role",
+                "orientation": "X",
+                "band": "lateral",
+                "index": 10,
+                "anchor": "R_fiducial"
+              }
+            },
+            {
+              "context": "",
+              "region_type": "fiber_tract",
+              "id": "X_cen1_1",
+              "fiber_type": "round_taxon",
+              "tract_size_mm": 4.0,
+              "length_mm": 20.0,
+              "density_pct": 100.0,
+              "fiber_diameter_um": 104.0,
+              "pore_description": "1470 round Taxon fibers/fixture; sub-micron hollow-tube ID",
+              "hole_density_per_mm2": 600128,
+              "orientation": "X",
+              "layout": {
+                "kind": "axis_role",
+                "orientation": "X",
+                "band": "central",
+                "index": 11,
+                "anchor": "R_fiducial"
+              }
+            },
+            {
+              "context": "",
+              "region_type": "fiber_tract",
+              "id": "X_cen1_2",
+              "fiber_type": "round_taxon",
+              "tract_size_mm": 4.0,
+              "length_mm": 20.0,
+              "density_pct": 100.0,
+              "fiber_diameter_um": 104.0,
+              "pore_description": "1470 round Taxon fibers/fixture; sub-micron hollow-tube ID",
+              "hole_density_per_mm2": 600128,
+              "orientation": "X",
+              "layout": {
+                "kind": "axis_role",
+                "orientation": "X",
+                "band": "central",
+                "index": 12,
+                "anchor": "R_fiducial"
+              }
+            },
+            {
+              "context": "",
+              "region_type": "fiber_tract",
+              "id": "X_cen1_3",
+              "fiber_type": "round_taxon",
+              "tract_size_mm": 4.0,
+              "length_mm": 20.0,
+              "density_pct": 100.0,
+              "fiber_diameter_um": 104.0,
+              "pore_description": "1470 round Taxon fibers/fixture; sub-micron hollow-tube ID",
+              "hole_density_per_mm2": 600128,
+              "orientation": "X",
+              "layout": {
+                "kind": "axis_role",
+                "orientation": "X",
+                "band": "central",
+                "index": 13,
+                "anchor": "R_fiducial"
+              }
+            },
+            {
+              "context": "",
+              "region_type": "fiber_tract",
+              "id": "X_cen1_4",
+              "fiber_type": "round_taxon",
+              "tract_size_mm": 4.0,
+              "length_mm": 20.0,
+              "density_pct": 100.0,
+              "fiber_diameter_um": 104.0,
+              "pore_description": "1470 round Taxon fibers/fixture; sub-micron hollow-tube ID",
+              "hole_density_per_mm2": 600128,
+              "orientation": "X",
+              "layout": {
+                "kind": "axis_role",
+                "orientation": "X",
+                "band": "central",
+                "index": 14,
+                "anchor": "R_fiducial"
+              }
+            },
+            {
+              "context": "",
+              "region_type": "fiber_tract",
+              "id": "X_cen1_5",
+              "fiber_type": "round_taxon",
+              "tract_size_mm": 4.0,
+              "length_mm": 20.0,
+              "density_pct": 100.0,
+              "fiber_diameter_um": 104.0,
+              "pore_description": "1470 round Taxon fibers/fixture; sub-micron hollow-tube ID",
+              "hole_density_per_mm2": 600128,
+              "orientation": "X",
+              "layout": {
+                "kind": "axis_role",
+                "orientation": "X",
+                "band": "central",
+                "index": 15,
+                "anchor": "R_fiducial"
+              }
+            },
+            {
+              "context": "",
+              "region_type": "fiber_tract",
+              "id": "X_cen1_6",
+              "fiber_type": "round_taxon",
+              "tract_size_mm": 4.0,
+              "length_mm": 20.0,
+              "density_pct": 100.0,
+              "fiber_diameter_um": 104.0,
+              "pore_description": "1470 round Taxon fibers/fixture; sub-micron hollow-tube ID",
+              "hole_density_per_mm2": 600128,
+              "orientation": "X",
+              "layout": {
+                "kind": "axis_role",
+                "orientation": "X",
+                "band": "central",
+                "index": 16,
+                "anchor": "R_fiducial"
+              }
+            },
+            {
+              "context": "",
+              "region_type": "fiber_tract",
+              "id": "X_cen2_1",
+              "fiber_type": "round_taxon",
+              "tract_size_mm": 4.0,
+              "length_mm": 20.0,
+              "density_pct": 100.0,
+              "fiber_diameter_um": 104.0,
+              "pore_description": "1470 round Taxon fibers/fixture; sub-micron hollow-tube ID",
+              "hole_density_per_mm2": 600128,
+              "orientation": "X",
+              "layout": {
+                "kind": "axis_role",
+                "orientation": "X",
+                "band": "central",
+                "index": 17,
+                "anchor": "R_fiducial"
+              }
+            },
+            {
+              "context": "",
+              "region_type": "fiber_tract",
+              "id": "X_cen2_2",
+              "fiber_type": "round_taxon",
+              "tract_size_mm": 4.0,
+              "length_mm": 20.0,
+              "density_pct": 100.0,
+              "fiber_diameter_um": 104.0,
+              "pore_description": "1470 round Taxon fibers/fixture; sub-micron hollow-tube ID",
+              "hole_density_per_mm2": 600128,
+              "orientation": "X",
+              "layout": {
+                "kind": "axis_role",
+                "orientation": "X",
+                "band": "central",
+                "index": 18,
+                "anchor": "R_fiducial"
+              }
+            },
+            {
+              "context": "",
+              "region_type": "fiber_tract",
+              "id": "X_cen2_3",
+              "fiber_type": "round_taxon",
+              "tract_size_mm": 4.0,
+              "length_mm": 20.0,
+              "density_pct": 100.0,
+              "fiber_diameter_um": 104.0,
+              "pore_description": "1470 round Taxon fibers/fixture; sub-micron hollow-tube ID",
+              "hole_density_per_mm2": 600128,
+              "orientation": "X",
+              "layout": {
+                "kind": "axis_role",
+                "orientation": "X",
+                "band": "central",
+                "index": 19,
+                "anchor": "R_fiducial"
+              }
+            },
+            {
+              "context": "",
+              "region_type": "fiber_tract",
+              "id": "X_cen2_4",
+              "fiber_type": "round_taxon",
+              "tract_size_mm": 4.0,
+              "length_mm": 20.0,
+              "density_pct": 100.0,
+              "fiber_diameter_um": 104.0,
+              "pore_description": "1470 round Taxon fibers/fixture; sub-micron hollow-tube ID",
+              "hole_density_per_mm2": 600128,
+              "orientation": "X",
+              "layout": {
+                "kind": "axis_role",
+                "orientation": "X",
+                "band": "central",
+                "index": 20,
+                "anchor": "R_fiducial"
+              }
+            },
+            {
+              "context": "",
+              "region_type": "fiber_tract",
+              "id": "X_cen2_5",
+              "fiber_type": "round_taxon",
+              "tract_size_mm": 4.0,
+              "length_mm": 20.0,
+              "density_pct": 100.0,
+              "fiber_diameter_um": 104.0,
+              "pore_description": "1470 round Taxon fibers/fixture; sub-micron hollow-tube ID",
+              "hole_density_per_mm2": 600128,
+              "orientation": "X",
+              "layout": {
+                "kind": "axis_role",
+                "orientation": "X",
+                "band": "central",
+                "index": 21,
+                "anchor": "R_fiducial"
+              }
+            },
+            {
+              "context": "",
+              "region_type": "fiber_tract",
+              "id": "X_cen2_6",
+              "fiber_type": "round_taxon",
+              "tract_size_mm": 4.0,
+              "length_mm": 20.0,
+              "density_pct": 100.0,
+              "fiber_diameter_um": 104.0,
+              "pore_description": "1470 round Taxon fibers/fixture; sub-micron hollow-tube ID",
+              "hole_density_per_mm2": 600128,
+              "orientation": "X",
+              "layout": {
+                "kind": "axis_role",
+                "orientation": "X",
+                "band": "central",
+                "index": 22,
+                "anchor": "R_fiducial"
+              }
+            }
+          ]
+        },
+        {
+          "context": "22 Y-oriented fixtures, mirror of the X arrangement (two lateral tracts of 5, two central of 6) spanning the diameter along Y. Reading X and Y tracts together separates a direction-specific gradient fault from an isotropic one. [manual: arrangement] [physics: along-tract FA profile reveals Y-gradient nonuniformity]",
+          "category": "Y-oriented fixtures",
+          "count": 22,
+          "grid_scheme": "2 lateral tracts of 5 + 2 central tracts of 6",
+          "fixtures": [
+            {
+              "context": "",
+              "region_type": "fiber_tract",
+              "id": "Y_lat1_1",
+              "fiber_type": "round_taxon",
+              "tract_size_mm": 4.0,
+              "length_mm": 20.0,
+              "density_pct": 100.0,
+              "fiber_diameter_um": 104.0,
+              "pore_description": "1470 round Taxon fibers/fixture; sub-micron hollow-tube ID",
+              "hole_density_per_mm2": 600128,
+              "orientation": "Y",
+              "layout": {
+                "kind": "axis_role",
+                "orientation": "Y",
+                "band": "lateral",
+                "index": 1,
+                "anchor": "R_fiducial"
+              }
+            },
+            {
+              "context": "",
+              "region_type": "fiber_tract",
+              "id": "Y_lat1_2",
+              "fiber_type": "round_taxon",
+              "tract_size_mm": 4.0,
+              "length_mm": 20.0,
+              "density_pct": 100.0,
+              "fiber_diameter_um": 104.0,
+              "pore_description": "1470 round Taxon fibers/fixture; sub-micron hollow-tube ID",
+              "hole_density_per_mm2": 600128,
+              "orientation": "Y",
+              "layout": {
+                "kind": "axis_role",
+                "orientation": "Y",
+                "band": "lateral",
+                "index": 2,
+                "anchor": "R_fiducial"
+              }
+            },
+            {
+              "context": "",
+              "region_type": "fiber_tract",
+              "id": "Y_lat1_3",
+              "fiber_type": "round_taxon",
+              "tract_size_mm": 4.0,
+              "length_mm": 20.0,
+              "density_pct": 100.0,
+              "fiber_diameter_um": 104.0,
+              "pore_description": "1470 round Taxon fibers/fixture; sub-micron hollow-tube ID",
+              "hole_density_per_mm2": 600128,
+              "orientation": "Y",
+              "layout": {
+                "kind": "axis_role",
+                "orientation": "Y",
+                "band": "lateral",
+                "index": 3,
+                "anchor": "R_fiducial"
+              }
+            },
+            {
+              "context": "",
+              "region_type": "fiber_tract",
+              "id": "Y_lat1_4",
+              "fiber_type": "round_taxon",
+              "tract_size_mm": 4.0,
+              "length_mm": 20.0,
+              "density_pct": 100.0,
+              "fiber_diameter_um": 104.0,
+              "pore_description": "1470 round Taxon fibers/fixture; sub-micron hollow-tube ID",
+              "hole_density_per_mm2": 600128,
+              "orientation": "Y",
+              "layout": {
+                "kind": "axis_role",
+                "orientation": "Y",
+                "band": "lateral",
+                "index": 4,
+                "anchor": "R_fiducial"
+              }
+            },
+            {
+              "context": "",
+              "region_type": "fiber_tract",
+              "id": "Y_lat1_5",
+              "fiber_type": "round_taxon",
+              "tract_size_mm": 4.0,
+              "length_mm": 20.0,
+              "density_pct": 100.0,
+              "fiber_diameter_um": 104.0,
+              "pore_description": "1470 round Taxon fibers/fixture; sub-micron hollow-tube ID",
+              "hole_density_per_mm2": 600128,
+              "orientation": "Y",
+              "layout": {
+                "kind": "axis_role",
+                "orientation": "Y",
+                "band": "lateral",
+                "index": 5,
+                "anchor": "R_fiducial"
+              }
+            },
+            {
+              "context": "",
+              "region_type": "fiber_tract",
+              "id": "Y_lat2_1",
+              "fiber_type": "round_taxon",
+              "tract_size_mm": 4.0,
+              "length_mm": 20.0,
+              "density_pct": 100.0,
+              "fiber_diameter_um": 104.0,
+              "pore_description": "1470 round Taxon fibers/fixture; sub-micron hollow-tube ID",
+              "hole_density_per_mm2": 600128,
+              "orientation": "Y",
+              "layout": {
+                "kind": "axis_role",
+                "orientation": "Y",
+                "band": "lateral",
+                "index": 6,
+                "anchor": "R_fiducial"
+              }
+            },
+            {
+              "context": "",
+              "region_type": "fiber_tract",
+              "id": "Y_lat2_2",
+              "fiber_type": "round_taxon",
+              "tract_size_mm": 4.0,
+              "length_mm": 20.0,
+              "density_pct": 100.0,
+              "fiber_diameter_um": 104.0,
+              "pore_description": "1470 round Taxon fibers/fixture; sub-micron hollow-tube ID",
+              "hole_density_per_mm2": 600128,
+              "orientation": "Y",
+              "layout": {
+                "kind": "axis_role",
+                "orientation": "Y",
+                "band": "lateral",
+                "index": 7,
+                "anchor": "R_fiducial"
+              }
+            },
+            {
+              "context": "",
+              "region_type": "fiber_tract",
+              "id": "Y_lat2_3",
+              "fiber_type": "round_taxon",
+              "tract_size_mm": 4.0,
+              "length_mm": 20.0,
+              "density_pct": 100.0,
+              "fiber_diameter_um": 104.0,
+              "pore_description": "1470 round Taxon fibers/fixture; sub-micron hollow-tube ID",
+              "hole_density_per_mm2": 600128,
+              "orientation": "Y",
+              "layout": {
+                "kind": "axis_role",
+                "orientation": "Y",
+                "band": "lateral",
+                "index": 8,
+                "anchor": "R_fiducial"
+              }
+            },
+            {
+              "context": "",
+              "region_type": "fiber_tract",
+              "id": "Y_lat2_4",
+              "fiber_type": "round_taxon",
+              "tract_size_mm": 4.0,
+              "length_mm": 20.0,
+              "density_pct": 100.0,
+              "fiber_diameter_um": 104.0,
+              "pore_description": "1470 round Taxon fibers/fixture; sub-micron hollow-tube ID",
+              "hole_density_per_mm2": 600128,
+              "orientation": "Y",
+              "layout": {
+                "kind": "axis_role",
+                "orientation": "Y",
+                "band": "lateral",
+                "index": 9,
+                "anchor": "R_fiducial"
+              }
+            },
+            {
+              "context": "",
+              "region_type": "fiber_tract",
+              "id": "Y_lat2_5",
+              "fiber_type": "round_taxon",
+              "tract_size_mm": 4.0,
+              "length_mm": 20.0,
+              "density_pct": 100.0,
+              "fiber_diameter_um": 104.0,
+              "pore_description": "1470 round Taxon fibers/fixture; sub-micron hollow-tube ID",
+              "hole_density_per_mm2": 600128,
+              "orientation": "Y",
+              "layout": {
+                "kind": "axis_role",
+                "orientation": "Y",
+                "band": "lateral",
+                "index": 10,
+                "anchor": "R_fiducial"
+              }
+            },
+            {
+              "context": "",
+              "region_type": "fiber_tract",
+              "id": "Y_cen1_1",
+              "fiber_type": "round_taxon",
+              "tract_size_mm": 4.0,
+              "length_mm": 20.0,
+              "density_pct": 100.0,
+              "fiber_diameter_um": 104.0,
+              "pore_description": "1470 round Taxon fibers/fixture; sub-micron hollow-tube ID",
+              "hole_density_per_mm2": 600128,
+              "orientation": "Y",
+              "layout": {
+                "kind": "axis_role",
+                "orientation": "Y",
+                "band": "central",
+                "index": 11,
+                "anchor": "R_fiducial"
+              }
+            },
+            {
+              "context": "",
+              "region_type": "fiber_tract",
+              "id": "Y_cen1_2",
+              "fiber_type": "round_taxon",
+              "tract_size_mm": 4.0,
+              "length_mm": 20.0,
+              "density_pct": 100.0,
+              "fiber_diameter_um": 104.0,
+              "pore_description": "1470 round Taxon fibers/fixture; sub-micron hollow-tube ID",
+              "hole_density_per_mm2": 600128,
+              "orientation": "Y",
+              "layout": {
+                "kind": "axis_role",
+                "orientation": "Y",
+                "band": "central",
+                "index": 12,
+                "anchor": "R_fiducial"
+              }
+            },
+            {
+              "context": "",
+              "region_type": "fiber_tract",
+              "id": "Y_cen1_3",
+              "fiber_type": "round_taxon",
+              "tract_size_mm": 4.0,
+              "length_mm": 20.0,
+              "density_pct": 100.0,
+              "fiber_diameter_um": 104.0,
+              "pore_description": "1470 round Taxon fibers/fixture; sub-micron hollow-tube ID",
+              "hole_density_per_mm2": 600128,
+              "orientation": "Y",
+              "layout": {
+                "kind": "axis_role",
+                "orientation": "Y",
+                "band": "central",
+                "index": 13,
+                "anchor": "R_fiducial"
+              }
+            },
+            {
+              "context": "",
+              "region_type": "fiber_tract",
+              "id": "Y_cen1_4",
+              "fiber_type": "round_taxon",
+              "tract_size_mm": 4.0,
+              "length_mm": 20.0,
+              "density_pct": 100.0,
+              "fiber_diameter_um": 104.0,
+              "pore_description": "1470 round Taxon fibers/fixture; sub-micron hollow-tube ID",
+              "hole_density_per_mm2": 600128,
+              "orientation": "Y",
+              "layout": {
+                "kind": "axis_role",
+                "orientation": "Y",
+                "band": "central",
+                "index": 14,
+                "anchor": "R_fiducial"
+              }
+            },
+            {
+              "context": "",
+              "region_type": "fiber_tract",
+              "id": "Y_cen1_5",
+              "fiber_type": "round_taxon",
+              "tract_size_mm": 4.0,
+              "length_mm": 20.0,
+              "density_pct": 100.0,
+              "fiber_diameter_um": 104.0,
+              "pore_description": "1470 round Taxon fibers/fixture; sub-micron hollow-tube ID",
+              "hole_density_per_mm2": 600128,
+              "orientation": "Y",
+              "layout": {
+                "kind": "axis_role",
+                "orientation": "Y",
+                "band": "central",
+                "index": 15,
+                "anchor": "R_fiducial"
+              }
+            },
+            {
+              "context": "",
+              "region_type": "fiber_tract",
+              "id": "Y_cen1_6",
+              "fiber_type": "round_taxon",
+              "tract_size_mm": 4.0,
+              "length_mm": 20.0,
+              "density_pct": 100.0,
+              "fiber_diameter_um": 104.0,
+              "pore_description": "1470 round Taxon fibers/fixture; sub-micron hollow-tube ID",
+              "hole_density_per_mm2": 600128,
+              "orientation": "Y",
+              "layout": {
+                "kind": "axis_role",
+                "orientation": "Y",
+                "band": "central",
+                "index": 16,
+                "anchor": "R_fiducial"
+              }
+            },
+            {
+              "context": "",
+              "region_type": "fiber_tract",
+              "id": "Y_cen2_1",
+              "fiber_type": "round_taxon",
+              "tract_size_mm": 4.0,
+              "length_mm": 20.0,
+              "density_pct": 100.0,
+              "fiber_diameter_um": 104.0,
+              "pore_description": "1470 round Taxon fibers/fixture; sub-micron hollow-tube ID",
+              "hole_density_per_mm2": 600128,
+              "orientation": "Y",
+              "layout": {
+                "kind": "axis_role",
+                "orientation": "Y",
+                "band": "central",
+                "index": 17,
+                "anchor": "R_fiducial"
+              }
+            },
+            {
+              "context": "",
+              "region_type": "fiber_tract",
+              "id": "Y_cen2_2",
+              "fiber_type": "round_taxon",
+              "tract_size_mm": 4.0,
+              "length_mm": 20.0,
+              "density_pct": 100.0,
+              "fiber_diameter_um": 104.0,
+              "pore_description": "1470 round Taxon fibers/fixture; sub-micron hollow-tube ID",
+              "hole_density_per_mm2": 600128,
+              "orientation": "Y",
+              "layout": {
+                "kind": "axis_role",
+                "orientation": "Y",
+                "band": "central",
+                "index": 18,
+                "anchor": "R_fiducial"
+              }
+            },
+            {
+              "context": "",
+              "region_type": "fiber_tract",
+              "id": "Y_cen2_3",
+              "fiber_type": "round_taxon",
+              "tract_size_mm": 4.0,
+              "length_mm": 20.0,
+              "density_pct": 100.0,
+              "fiber_diameter_um": 104.0,
+              "pore_description": "1470 round Taxon fibers/fixture; sub-micron hollow-tube ID",
+              "hole_density_per_mm2": 600128,
+              "orientation": "Y",
+              "layout": {
+                "kind": "axis_role",
+                "orientation": "Y",
+                "band": "central",
+                "index": 19,
+                "anchor": "R_fiducial"
+              }
+            },
+            {
+              "context": "",
+              "region_type": "fiber_tract",
+              "id": "Y_cen2_4",
+              "fiber_type": "round_taxon",
+              "tract_size_mm": 4.0,
+              "length_mm": 20.0,
+              "density_pct": 100.0,
+              "fiber_diameter_um": 104.0,
+              "pore_description": "1470 round Taxon fibers/fixture; sub-micron hollow-tube ID",
+              "hole_density_per_mm2": 600128,
+              "orientation": "Y",
+              "layout": {
+                "kind": "axis_role",
+                "orientation": "Y",
+                "band": "central",
+                "index": 20,
+                "anchor": "R_fiducial"
+              }
+            },
+            {
+              "context": "",
+              "region_type": "fiber_tract",
+              "id": "Y_cen2_5",
+              "fiber_type": "round_taxon",
+              "tract_size_mm": 4.0,
+              "length_mm": 20.0,
+              "density_pct": 100.0,
+              "fiber_diameter_um": 104.0,
+              "pore_description": "1470 round Taxon fibers/fixture; sub-micron hollow-tube ID",
+              "hole_density_per_mm2": 600128,
+              "orientation": "Y",
+              "layout": {
+                "kind": "axis_role",
+                "orientation": "Y",
+                "band": "central",
+                "index": 21,
+                "anchor": "R_fiducial"
+              }
+            },
+            {
+              "context": "",
+              "region_type": "fiber_tract",
+              "id": "Y_cen2_6",
+              "fiber_type": "round_taxon",
+              "tract_size_mm": 4.0,
+              "length_mm": 20.0,
+              "density_pct": 100.0,
+              "fiber_diameter_um": 104.0,
+              "pore_description": "1470 round Taxon fibers/fixture; sub-micron hollow-tube ID",
+              "hole_density_per_mm2": 600128,
+              "orientation": "Y",
+              "layout": {
+                "kind": "axis_role",
+                "orientation": "Y",
+                "band": "central",
+                "index": 22,
+                "anchor": "R_fiducial"
+              }
+            }
+          ]
+        },
+        {
+          "context": "21 Z-oriented fixtures interspersed in a grid give through-plane fibre samples across the FOV; combined with X and Y they let homogeneity be assessed in all three encoding directions. [manual: arrangement] [physics: three-orientation sampling for full homogeneity check]",
+          "category": "Z-oriented fixtures",
+          "count": 21,
+          "grid_scheme": "interspersed grid pattern",
+          "fixtures": [
+            {
+              "context": "",
+              "region_type": "fiber_tract",
+              "id": "Z_1",
+              "fiber_type": "round_taxon",
+              "tract_size_mm": 4.0,
+              "length_mm": 20.0,
+              "density_pct": 100.0,
+              "fiber_diameter_um": 104.0,
+              "pore_description": "1470 round Taxon fibers/fixture; sub-micron hollow-tube ID",
+              "hole_density_per_mm2": 600128,
+              "orientation": "Z",
+              "layout": {
+                "kind": "axis_role",
+                "orientation": "Z",
+                "index": 1,
+                "anchor": "R_fiducial"
+              }
+            },
+            {
+              "context": "",
+              "region_type": "fiber_tract",
+              "id": "Z_2",
+              "fiber_type": "round_taxon",
+              "tract_size_mm": 4.0,
+              "length_mm": 20.0,
+              "density_pct": 100.0,
+              "fiber_diameter_um": 104.0,
+              "pore_description": "1470 round Taxon fibers/fixture; sub-micron hollow-tube ID",
+              "hole_density_per_mm2": 600128,
+              "orientation": "Z",
+              "layout": {
+                "kind": "axis_role",
+                "orientation": "Z",
+                "index": 2,
+                "anchor": "R_fiducial"
+              }
+            },
+            {
+              "context": "",
+              "region_type": "fiber_tract",
+              "id": "Z_3",
+              "fiber_type": "round_taxon",
+              "tract_size_mm": 4.0,
+              "length_mm": 20.0,
+              "density_pct": 100.0,
+              "fiber_diameter_um": 104.0,
+              "pore_description": "1470 round Taxon fibers/fixture; sub-micron hollow-tube ID",
+              "hole_density_per_mm2": 600128,
+              "orientation": "Z",
+              "layout": {
+                "kind": "axis_role",
+                "orientation": "Z",
+                "index": 3,
+                "anchor": "R_fiducial"
+              }
+            },
+            {
+              "context": "",
+              "region_type": "fiber_tract",
+              "id": "Z_4",
+              "fiber_type": "round_taxon",
+              "tract_size_mm": 4.0,
+              "length_mm": 20.0,
+              "density_pct": 100.0,
+              "fiber_diameter_um": 104.0,
+              "pore_description": "1470 round Taxon fibers/fixture; sub-micron hollow-tube ID",
+              "hole_density_per_mm2": 600128,
+              "orientation": "Z",
+              "layout": {
+                "kind": "axis_role",
+                "orientation": "Z",
+                "index": 4,
+                "anchor": "R_fiducial"
+              }
+            },
+            {
+              "context": "",
+              "region_type": "fiber_tract",
+              "id": "Z_5",
+              "fiber_type": "round_taxon",
+              "tract_size_mm": 4.0,
+              "length_mm": 20.0,
+              "density_pct": 100.0,
+              "fiber_diameter_um": 104.0,
+              "pore_description": "1470 round Taxon fibers/fixture; sub-micron hollow-tube ID",
+              "hole_density_per_mm2": 600128,
+              "orientation": "Z",
+              "layout": {
+                "kind": "axis_role",
+                "orientation": "Z",
+                "index": 5,
+                "anchor": "R_fiducial"
+              }
+            },
+            {
+              "context": "",
+              "region_type": "fiber_tract",
+              "id": "Z_6",
+              "fiber_type": "round_taxon",
+              "tract_size_mm": 4.0,
+              "length_mm": 20.0,
+              "density_pct": 100.0,
+              "fiber_diameter_um": 104.0,
+              "pore_description": "1470 round Taxon fibers/fixture; sub-micron hollow-tube ID",
+              "hole_density_per_mm2": 600128,
+              "orientation": "Z",
+              "layout": {
+                "kind": "axis_role",
+                "orientation": "Z",
+                "index": 6,
+                "anchor": "R_fiducial"
+              }
+            },
+            {
+              "context": "",
+              "region_type": "fiber_tract",
+              "id": "Z_7",
+              "fiber_type": "round_taxon",
+              "tract_size_mm": 4.0,
+              "length_mm": 20.0,
+              "density_pct": 100.0,
+              "fiber_diameter_um": 104.0,
+              "pore_description": "1470 round Taxon fibers/fixture; sub-micron hollow-tube ID",
+              "hole_density_per_mm2": 600128,
+              "orientation": "Z",
+              "layout": {
+                "kind": "axis_role",
+                "orientation": "Z",
+                "index": 7,
+                "anchor": "R_fiducial"
+              }
+            },
+            {
+              "context": "",
+              "region_type": "fiber_tract",
+              "id": "Z_8",
+              "fiber_type": "round_taxon",
+              "tract_size_mm": 4.0,
+              "length_mm": 20.0,
+              "density_pct": 100.0,
+              "fiber_diameter_um": 104.0,
+              "pore_description": "1470 round Taxon fibers/fixture; sub-micron hollow-tube ID",
+              "hole_density_per_mm2": 600128,
+              "orientation": "Z",
+              "layout": {
+                "kind": "axis_role",
+                "orientation": "Z",
+                "index": 8,
+                "anchor": "R_fiducial"
+              }
+            },
+            {
+              "context": "",
+              "region_type": "fiber_tract",
+              "id": "Z_9",
+              "fiber_type": "round_taxon",
+              "tract_size_mm": 4.0,
+              "length_mm": 20.0,
+              "density_pct": 100.0,
+              "fiber_diameter_um": 104.0,
+              "pore_description": "1470 round Taxon fibers/fixture; sub-micron hollow-tube ID",
+              "hole_density_per_mm2": 600128,
+              "orientation": "Z",
+              "layout": {
+                "kind": "axis_role",
+                "orientation": "Z",
+                "index": 9,
+                "anchor": "R_fiducial"
+              }
+            },
+            {
+              "context": "",
+              "region_type": "fiber_tract",
+              "id": "Z_10",
+              "fiber_type": "round_taxon",
+              "tract_size_mm": 4.0,
+              "length_mm": 20.0,
+              "density_pct": 100.0,
+              "fiber_diameter_um": 104.0,
+              "pore_description": "1470 round Taxon fibers/fixture; sub-micron hollow-tube ID",
+              "hole_density_per_mm2": 600128,
+              "orientation": "Z",
+              "layout": {
+                "kind": "axis_role",
+                "orientation": "Z",
+                "index": 10,
+                "anchor": "R_fiducial"
+              }
+            },
+            {
+              "context": "",
+              "region_type": "fiber_tract",
+              "id": "Z_11",
+              "fiber_type": "round_taxon",
+              "tract_size_mm": 4.0,
+              "length_mm": 20.0,
+              "density_pct": 100.0,
+              "fiber_diameter_um": 104.0,
+              "pore_description": "1470 round Taxon fibers/fixture; sub-micron hollow-tube ID",
+              "hole_density_per_mm2": 600128,
+              "orientation": "Z",
+              "layout": {
+                "kind": "axis_role",
+                "orientation": "Z",
+                "index": 11,
+                "anchor": "R_fiducial"
+              }
+            },
+            {
+              "context": "",
+              "region_type": "fiber_tract",
+              "id": "Z_12",
+              "fiber_type": "round_taxon",
+              "tract_size_mm": 4.0,
+              "length_mm": 20.0,
+              "density_pct": 100.0,
+              "fiber_diameter_um": 104.0,
+              "pore_description": "1470 round Taxon fibers/fixture; sub-micron hollow-tube ID",
+              "hole_density_per_mm2": 600128,
+              "orientation": "Z",
+              "layout": {
+                "kind": "axis_role",
+                "orientation": "Z",
+                "index": 12,
+                "anchor": "R_fiducial"
+              }
+            },
+            {
+              "context": "",
+              "region_type": "fiber_tract",
+              "id": "Z_13",
+              "fiber_type": "round_taxon",
+              "tract_size_mm": 4.0,
+              "length_mm": 20.0,
+              "density_pct": 100.0,
+              "fiber_diameter_um": 104.0,
+              "pore_description": "1470 round Taxon fibers/fixture; sub-micron hollow-tube ID",
+              "hole_density_per_mm2": 600128,
+              "orientation": "Z",
+              "layout": {
+                "kind": "axis_role",
+                "orientation": "Z",
+                "index": 13,
+                "anchor": "R_fiducial"
+              }
+            },
+            {
+              "context": "",
+              "region_type": "fiber_tract",
+              "id": "Z_14",
+              "fiber_type": "round_taxon",
+              "tract_size_mm": 4.0,
+              "length_mm": 20.0,
+              "density_pct": 100.0,
+              "fiber_diameter_um": 104.0,
+              "pore_description": "1470 round Taxon fibers/fixture; sub-micron hollow-tube ID",
+              "hole_density_per_mm2": 600128,
+              "orientation": "Z",
+              "layout": {
+                "kind": "axis_role",
+                "orientation": "Z",
+                "index": 14,
+                "anchor": "R_fiducial"
+              }
+            },
+            {
+              "context": "",
+              "region_type": "fiber_tract",
+              "id": "Z_15",
+              "fiber_type": "round_taxon",
+              "tract_size_mm": 4.0,
+              "length_mm": 20.0,
+              "density_pct": 100.0,
+              "fiber_diameter_um": 104.0,
+              "pore_description": "1470 round Taxon fibers/fixture; sub-micron hollow-tube ID",
+              "hole_density_per_mm2": 600128,
+              "orientation": "Z",
+              "layout": {
+                "kind": "axis_role",
+                "orientation": "Z",
+                "index": 15,
+                "anchor": "R_fiducial"
+              }
+            },
+            {
+              "context": "",
+              "region_type": "fiber_tract",
+              "id": "Z_16",
+              "fiber_type": "round_taxon",
+              "tract_size_mm": 4.0,
+              "length_mm": 20.0,
+              "density_pct": 100.0,
+              "fiber_diameter_um": 104.0,
+              "pore_description": "1470 round Taxon fibers/fixture; sub-micron hollow-tube ID",
+              "hole_density_per_mm2": 600128,
+              "orientation": "Z",
+              "layout": {
+                "kind": "axis_role",
+                "orientation": "Z",
+                "index": 16,
+                "anchor": "R_fiducial"
+              }
+            },
+            {
+              "context": "",
+              "region_type": "fiber_tract",
+              "id": "Z_17",
+              "fiber_type": "round_taxon",
+              "tract_size_mm": 4.0,
+              "length_mm": 20.0,
+              "density_pct": 100.0,
+              "fiber_diameter_um": 104.0,
+              "pore_description": "1470 round Taxon fibers/fixture; sub-micron hollow-tube ID",
+              "hole_density_per_mm2": 600128,
+              "orientation": "Z",
+              "layout": {
+                "kind": "axis_role",
+                "orientation": "Z",
+                "index": 17,
+                "anchor": "R_fiducial"
+              }
+            },
+            {
+              "context": "",
+              "region_type": "fiber_tract",
+              "id": "Z_18",
+              "fiber_type": "round_taxon",
+              "tract_size_mm": 4.0,
+              "length_mm": 20.0,
+              "density_pct": 100.0,
+              "fiber_diameter_um": 104.0,
+              "pore_description": "1470 round Taxon fibers/fixture; sub-micron hollow-tube ID",
+              "hole_density_per_mm2": 600128,
+              "orientation": "Z",
+              "layout": {
+                "kind": "axis_role",
+                "orientation": "Z",
+                "index": 18,
+                "anchor": "R_fiducial"
+              }
+            },
+            {
+              "context": "",
+              "region_type": "fiber_tract",
+              "id": "Z_19",
+              "fiber_type": "round_taxon",
+              "tract_size_mm": 4.0,
+              "length_mm": 20.0,
+              "density_pct": 100.0,
+              "fiber_diameter_um": 104.0,
+              "pore_description": "1470 round Taxon fibers/fixture; sub-micron hollow-tube ID",
+              "hole_density_per_mm2": 600128,
+              "orientation": "Z",
+              "layout": {
+                "kind": "axis_role",
+                "orientation": "Z",
+                "index": 19,
+                "anchor": "R_fiducial"
+              }
+            },
+            {
+              "context": "",
+              "region_type": "fiber_tract",
+              "id": "Z_20",
+              "fiber_type": "round_taxon",
+              "tract_size_mm": 4.0,
+              "length_mm": 20.0,
+              "density_pct": 100.0,
+              "fiber_diameter_um": 104.0,
+              "pore_description": "1470 round Taxon fibers/fixture; sub-micron hollow-tube ID",
+              "hole_density_per_mm2": 600128,
+              "orientation": "Z",
+              "layout": {
+                "kind": "axis_role",
+                "orientation": "Z",
+                "index": 20,
+                "anchor": "R_fiducial"
+              }
+            },
+            {
+              "context": "",
+              "region_type": "fiber_tract",
+              "id": "Z_21",
+              "fiber_type": "round_taxon",
+              "tract_size_mm": 4.0,
+              "length_mm": 20.0,
+              "density_pct": 100.0,
+              "fiber_diameter_um": 104.0,
+              "pore_description": "1470 round Taxon fibers/fixture; sub-micron hollow-tube ID",
+              "hole_density_per_mm2": 600128,
+              "orientation": "Z",
+              "layout": {
+                "kind": "axis_role",
+                "orientation": "Z",
+                "index": 21,
+                "anchor": "R_fiducial"
+              }
+            }
+          ]
+        }
+      ],
+      "fiducials": [
+        {
+          "context": "",
+          "region_type": "fiducial",
+          "id": "waterspace_1",
+          "purpose": "slice_selection",
+          "is_chiral_marker": false
+        },
+        {
+          "context": "",
+          "region_type": "fiducial",
+          "id": "waterspace_2",
+          "purpose": "slice_selection",
+          "is_chiral_marker": false
+        },
+        {
+          "context": "",
+          "region_type": "fiducial",
+          "id": "waterspace_3",
+          "purpose": "slice_selection",
+          "is_chiral_marker": false
+        },
+        {
+          "context": "",
+          "region_type": "fiducial",
+          "id": "waterspace_4",
+          "purpose": "slice_selection",
+          "is_chiral_marker": false
+        },
+        {
+          "context": "",
+          "region_type": "fiducial",
+          "id": "R_marker",
+          "purpose": "orientation",
+          "is_chiral_marker": true
+        }
+      ],
+      "protocol": {
+        "context": "",
+        "summary": "8 series — b0 + 3 shells (b=200/1000/3000), 64 dir, AP & PA; 19 slices",
+        "series": [
+          {
+            "context": "",
+            "name": "DTI64S_PRODUCT_b0_AP",
+            "voxel_mm": "2.0 x 2.0 x 2.0",
+            "tr_ms": 8000.0,
+            "te_ms": 74.0,
+            "b_values": [],
+            "n_slices": 19,
+            "slice_thickness_mm": 2.0,
+            "orientation": "Transversal, A>>P"
+          },
+          {
+            "context": "",
+            "name": "DTI64S_PRODUCT_b200_AP",
+            "voxel_mm": "2.0 x 2.0 x 2.0",
+            "tr_ms": 8000.0,
+            "te_ms": 74.0,
+            "b_values": [
+              200
+            ],
+            "directions": 64,
+            "n_slices": 19,
+            "slice_thickness_mm": 2.0,
+            "orientation": "Transversal, A>>P"
+          },
+          {
+            "context": "",
+            "name": "DTI64S_PRODUCT_b1000_AP",
+            "voxel_mm": "2.0 x 2.0 x 2.0",
+            "tr_ms": 8000.0,
+            "te_ms": 74.0,
+            "b_values": [
+              1000
+            ],
+            "directions": 64,
+            "n_slices": 19,
+            "slice_thickness_mm": 2.0,
+            "orientation": "Transversal, A>>P"
+          },
+          {
+            "context": "",
+            "name": "DTI64S_PRODUCT_b3000_AP",
+            "voxel_mm": "2.0 x 2.0 x 2.0",
+            "tr_ms": 8000.0,
+            "te_ms": 74.0,
+            "b_values": [
+              3000
+            ],
+            "directions": 64,
+            "n_slices": 19,
+            "slice_thickness_mm": 2.0,
+            "orientation": "Transversal, A>>P"
+          },
+          {
+            "context": "",
+            "name": "DTI64S_PRODUCT_b0_PA",
+            "voxel_mm": "2.0 x 2.0 x 2.0",
+            "tr_ms": 8000.0,
+            "te_ms": 74.0,
+            "b_values": [],
+            "n_slices": 19,
+            "slice_thickness_mm": 2.0,
+            "orientation": "Transversal, P>>A"
+          },
+          {
+            "context": "",
+            "name": "DTI64S_PRODUCT_b200_PA",
+            "voxel_mm": "2.0 x 2.0 x 2.0",
+            "tr_ms": 8000.0,
+            "te_ms": 74.0,
+            "b_values": [
+              200
+            ],
+            "directions": 64,
+            "n_slices": 19,
+            "slice_thickness_mm": 2.0,
+            "orientation": "Transversal, P>>A"
+          },
+          {
+            "context": "",
+            "name": "DTI64S_PRODUCT_b1000_PA",
+            "voxel_mm": "2.0 x 2.0 x 2.0",
+            "tr_ms": 8000.0,
+            "te_ms": 74.0,
+            "b_values": [
+              1000
+            ],
+            "directions": 64,
+            "n_slices": 19,
+            "slice_thickness_mm": 2.0,
+            "orientation": "Transversal, P>>A"
+          },
+          {
+            "context": "",
+            "name": "DTI64S_PRODUCT_b3000_PA",
+            "voxel_mm": "2.0 x 2.0 x 2.0",
+            "tr_ms": 8000.0,
+            "te_ms": 74.0,
+            "b_values": [
+              3000
+            ],
+            "directions": 64,
+            "n_slices": 19,
+            "slice_thickness_mm": 2.0,
+            "orientation": "Transversal, P>>A"
+          }
+        ]
+      },
+      "hardware": []
+    }
+  ],
+  "assemblies": [
+    {
+      "context": "",
+      "name": "Central column / tie-rods",
+      "hardware": [
+        {
+          "context": "",
+          "source": {
+            "origin": "figure_observed",
+            "note": ""
+          },
+          "type": "tie_rod",
+          "function": "dome-to-base spine",
+          "mr_safe": true
+        }
+      ]
+    },
+    {
+      "context": "",
+      "name": "Octagonal base flange",
+      "hardware": [
+        {
+          "context": "",
+          "source": {
+            "origin": "figure_observed",
+            "note": ""
+          },
+          "type": "flange",
+          "function": "coil seating / orientation",
+          "mr_safe": true
+        }
+      ]
+    },
+    {
+      "context": "",
+      "name": "Pressure Compensation Disk (optional)",
+      "hardware": [
+        {
+          "context": "",
+          "source": {
+            "page": 8,
+            "section": "3.0",
+            "origin": "manual",
+            "note": ""
+          },
+          "type": "bellows_spring",
+          "function": "thermal/pressure compensation",
+          "mr_safe": true
+        }
+      ]
+    }
+  ]
+}</script>
+<script>
+const PHANTOM = JSON.parse(document.getElementById('phantom-data').textContent);
+const $ = (s,el=document)=>el.querySelector(s);
+const esc = s => String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+// --- parse [manual: ..] [physics: ..] tags out of a context string ---
+function splitContext(str){
+  if(!str||!str.trim()) return {prose:'', tags:[]};
+  const tags=[]; let prose=str;
+  prose=prose.replace(/\[(manual|physics):\s*([^\]]*)\]/g,(_,k,v)=>{tags.push({k,v:v.trim()});return '';});
+  return {prose:prose.trim(), tags};
+}
+function ctxBlock(str, {expect=true}={}){
+  const {prose,tags}=splitContext(str);
+  if(!prose){
+    return expect ? `<div class="ctx gap"><span class="empty">▲ needs context</span></div>` : '';
+  }
+  const t = tags.map(t=>`<span class="tag ${t.k}"><span class="kk">${t.k}</span>${esc(t.v)}</span>`).join('');
+  return `<div class="ctx"><p>${esc(prose)}</p>${t?`<div class="tags">${t}</div>`:''}</div>`;
+}
+function srcTag(s){
+  if(!s) return '';
+  const parts=[]; if(s.page) parts.push('p.'+s.page); if(s.section) parts.push('§'+s.section);
+  if(s.origin && s.origin!=='manual') parts.push(s.origin);
+  return parts.length?`<span class="src">${esc(parts.join(' '))}</span>`:'';
+}
+const layoutStr = l => !l ? '' :
+  l.kind==='grid' ? `r${l.row}·c${l.col}` :
+  l.kind==='axis_role' ? `${l.orientation}${l.band?' '+l.band:''}${l.index?' #'+l.index:''}` :
+  l.kind==='array' ? `${l.array}${l.array_index?' #'+l.array_index:''}` : '';
+
+function refVals(rvs){
+  if(!rvs||!rvs.length) return '<span class="dim">—</span>';
+  return `<div class="rv">`+rvs.map(r=>{
+    const band=(r.unc_minus!=null&&r.unc_plus!=null)?` <span class="band">[${r.unc_minus}–${r.unc_plus}]</span>`:'';
+    const at=r.temp_C!=null?` <span class="band">@${r.temp_C}°C</span>`:'';
+    const cite=r.citation?` <span class="band">${esc(r.citation)}</span>`:'';
+    return `<div><span class="q">${esc(r.quantity)}</span> ${r.value} ${esc(r.unit)}${band}${at}${cite}</div>`;
+  }).join('')+`</div>`;
+}
+
+// --- fixture renderers by region_type ---
+function renderFixtures(region){
+  const fx=region.fixtures||[];
+  if(!fx.length) return '';
+  const type=fx[0].region_type;
+
+  if(type==='fluid_cell'){
+    return table(['ID','Solute','Concentration','Layout','Reference values'],
+      fx.map(f=>`<tr data-id="${esc(f.id)}"><td class="cid">${esc(f.id)}</td>
+        <td class="mono">${esc(f.solute)}</td><td>${esc(f.concentration||'—')}</td>
+        <td class="mono dim">${esc(layoutStr(f.layout))}</td><td>${refVals(f.reference_values)}</td></tr>`).join(''));
+  }
+  if(type==='fiber_tract'){
+    const round=fx.some(f=>f.fiber_type==='round_taxon');
+    const cols=['ID','Size mm','Density %','n Taxons', round?'Fibre Ø / holes·mm²':'Orientation','Layout'];
+    return table(cols, fx.map(f=>`<tr data-id="${esc(f.id)}"><td class="cid">${esc(f.id)}</td>
+      <td class="num">${f.tract_size_mm}</td><td class="num">${f.density_pct}</td>
+      <td class="num">${f.n_taxons!=null?f.n_taxons.toLocaleString():'—'}</td>
+      <td class="mono dim">${round?`${f.fiber_diameter_um||'—'}µm / ${f.hole_density_per_mm2?f.hole_density_per_mm2.toLocaleString():'—'}`:esc(f.orientation||'—')}</td>
+      <td class="mono dim">${esc(layoutStr(f.layout))}</td></tr>`).join(''));
+  }
+  if(type==='crossing_fixture'){
+    const card=f=>{
+      const p=f.primary_tract,c=f.crossing_tract;
+      return `<div class="xcard" data-id="${esc(f.id)}"><div class="ang">${f.crossing_angle_deg}°</div>
+        <div class="cid">${esc(f.id)}</div>
+        <div class="row"><span>primary ${p.density_pct}%</span><span>${p.n_taxons?p.n_taxons.toLocaleString():''}</span></div>
+        <div class="row"><span>crossing ${c.density_pct}%</span><span>${c.n_taxons?c.n_taxons.toLocaleString():''}</span></div></div>`;
+    };
+    return `<div class="xgrid">${fx.map(card).join('')}</div>`;
+  }
+  if(type==='hole_pattern'){
+    return table(['ID','Contrast','Ø mm','Skew°','Insert µm','Objects mm'],
+      fx.map(f=>`<tr data-id="${esc(f.id)}"><td class="cid">${esc(f.id)}</td>
+        <td>${esc(f.contrast)}</td><td class="num">${f.hole_diameter_mm??'—'}</td>
+        <td class="num">${f.skew_deg??'—'}</td><td class="num">${f.insert_thickness_um??'—'}</td>
+        <td class="mono dim">${f.object_diameters_mm&&f.object_diameters_mm.length?esc(f.object_diameters_mm.join(' / ')):'—'}</td></tr>`).join(''));
+  }
+  if(type==='ramp'){
+    return table(['ID','Type','Dimensions mm','Angle°','Note'],
+      fx.map(f=>`<tr data-id="${esc(f.id)}"><td class="cid">${esc(f.id)}</td>
+        <td>${esc(f.ramp_type)}</td><td class="mono">${esc(f.dimensions_mm||'—')}</td>
+        <td class="num">${f.angle_deg??'—'}</td><td class="dim">${esc(splitContext(f.context).prose||'—')}</td></tr>`).join(''));
+  }
+  return '<pre class="mono">'+esc(JSON.stringify(fx,null,2))+'</pre>';
+}
+function table(cols,rows){
+  return `<table><thead><tr>${cols.map(c=>`<th>${esc(c)}</th>`).join('')}</tr></thead><tbody>${rows}</tbody></table>`;
+}
+
+function fiducialTable(fids){
+  if(!fids||!fids.length) return '';
+  return `<div class="section-lab">Fiducials · ${fids.length}</div>`+
+    table(['ID','Purpose','Chiral','Note'],
+      fids.map(f=>`<tr><td class="cid">${esc(f.id)}</td><td>${esc(f.purpose)}</td>
+        <td>${f.is_chiral_marker?'<span class="pill chiral">R · chiral</span>':'<span class="pill">—</span>'}</td>
+        <td class="dim">${esc(splitContext(f.context).prose||'—')}</td></tr>`).join(''));
+}
+function protocolBlock(p){
+  if(!p) return '';
+  const rows=(p.series||[]).map(s=>`<tr><td class="cid">${esc(s.name)}</td>
+    <td class="mono dim">${esc(s.voxel_mm||'—')}</td>
+    <td class="num">${s.tr_ms??'—'}${s.te_ms!=null?' / '+s.te_ms:''}${s.ti_ms!=null?' / '+s.ti_ms:''}</td>
+    <td class="mono dim">${s.b_values&&s.b_values.length?esc(s.b_values.join('/')):'—'}${s.directions?' · '+s.directions+'dir':''}</td>
+    <td class="num">${s.n_slices??'—'}${s.slice_thickness_mm!=null?' · '+s.slice_thickness_mm+'mm':''}</td></tr>`).join('');
+  return `<div class="section-lab">Scan protocol · ${(p.series||[]).length} series</div>`+
+    ctxBlock(p.context,{expect:false})+
+    table(['Series','Voxel','TR/TE/TI ms','b / dir','Slices'],rows);
+}
+
+// --- disk detail ---
+function renderDisk(d){
+  const nfx=(d.test_regions||[]).reduce((a,r)=>a+(r.fixtures?.length||0),0);
+  let html=`<div class="dhead"><h2>${esc(d.name)}</h2>
+    ${d.optional?'<span class="opt">optional</span>':''}${srcTag(d.source)}</div>`;
+  html+=`<div class="metrics">
+    <span class="metric">stack ${d.stack_index} · ${esc(d.band)}</span>
+    <span class="metric">${nfx} fixtures</span>
+    <span class="metric">${(d.fiducials||[]).length} fiducials</span>
+    ${(d.metrics_enabled||[]).map(m=>`<span class="metric">${esc(m)}</span>`).join('')}</div>`;
+  if(d.material) html+=`<div class="mcard" style="margin-bottom:14px"><div class="t">Material</div><div class="v" style="font-family:var(--f-body);font-weight:400">${esc(d.material)}</div></div>`;
+  html+=ctxBlock(d.context);
+
+  html+=`<div class="tools"><input class="search" id="fxsearch" placeholder="filter fixtures by id…" autocomplete="off"></div>`;
+  html+=`<div class="section-lab">Test regions · ${(d.test_regions||[]).length}</div>`;
+  (d.test_regions||[]).forEach((r,i)=>{
+    const n=r.fixtures?.length||0;
+    const mism=(r.count!=null && r.count!==n);
+    html+=`<div class="region${i===0?' open':''}">
+      <button class="rhead"><span class="chev">▸</span>${esc(r.category)}
+        <span class="rcount${mism?' warn':''}">${r.count!=null?r.count+' declared · ':''}${n} shown</span></button>
+      <div class="rbody">
+        ${ctxBlock(r.context)}
+        ${r.grid_scheme?`<p class="dim mono" style="font-size:12px;margin:8px 0 0">${esc(r.grid_scheme)}</p>`:''}
+        ${renderFixtures(r)}
+      </div></div>`;
+  });
+  html+=fiducialTable(d.fiducials);
+  html+=protocolBlock(d.protocol);
+
+  const el=$('#detail'); el.innerHTML=html;
+  el.querySelectorAll('.rhead').forEach(b=>b.onclick=()=>b.closest('.region').classList.toggle('open'));
+  const sb=$('#fxsearch');
+  sb.oninput=()=>{
+    const q=sb.value.trim().toLowerCase();
+    el.querySelectorAll('[data-id]').forEach(row=>{
+      row.style.display = (!q || row.dataset.id.toLowerCase().includes(q))?'':'none';
+    });
+    if(q) el.querySelectorAll('.region').forEach(r=>r.classList.add('open'));
+  };
+}
+
+// --- spine + header ---
+function domeSVG(){
+  return `<svg class="dome" width="188" height="34" viewBox="0 0 188 34" aria-hidden="true">
+    <path d="M6 34 V20 C6 6 30 1 94 1 C158 1 182 6 182 20 V34 Z"
+      fill="var(--panel)" stroke="var(--line2)" stroke-width="1"/>
+    <line x1="94" y1="1" x2="94" y2="10" stroke="var(--line2)" stroke-width="1"/>
+    <circle cx="94" cy="9" r="2.4" fill="none" stroke="var(--teal)" stroke-width="1.2"/></svg>`;
+}
+function buildSpine(disks){
+  const stack=$('#stack');
+  stack.innerHTML=domeSVG()+disks.map((d,i)=>{
+    const nfx=(d.test_regions||[]).reduce((a,r)=>a+(r.fixtures?.length||0),0);
+    return `<button class="seg" data-i="${i}">${esc(d.name.replace(' Diffusion Disk','').replace(' Disk',''))}
+      ${d.optional?'<span class="opt">opt</span>':''}
+      <span class="band">${esc(d.band)}</span><span class="n">${nfx}</span></button>`;
+  }).join('')+`<div class="base"></div>`;
+  stack.querySelectorAll('.seg').forEach(s=>s.onclick=()=>select(+s.dataset.i));
+}
+let DISKS=[];
+function select(i){
+  DISKS.forEach((_,j)=>$(`.seg[data-i="${j}"]`)?.classList.toggle('active',i===j));
+  renderDisk(DISKS[i]);
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+function header(){
+  $('#modelId').textContent=PHANTOM.model_id||'';
+  $('#title').textContent=PHANTOM.name||'';
+  $('#maker').textContent=PHANTOM.manufacturer||'';
+  const nfx=(PHANTOM.disks||[]).reduce((a,d)=>a+(d.test_regions||[]).reduce((x,r)=>x+(r.fixtures?.length||0),0),0);
+  const nfd=(PHANTOM.disks||[]).reduce((a,d)=>a+(d.fiducials||[]).length,0);
+  $('#stats').innerHTML=`
+    <span><b>${(PHANTOM.disks||[]).length}</b> disks</span>
+    <span><b>${nfx}</b> fixtures</span>
+    <span><b>${nfd}</b> fiducials</span>
+    <span><b>${(PHANTOM.solutes||[]).length}</b> solutes</span>
+    <span>${PHANTOM.temp_range_C?`${PHANTOM.temp_range_C[0]}–${PHANTOM.temp_range_C[1]}°C`:''}</span>`;
+}
+
+DISKS=(PHANTOM.disks||[]).slice().sort((a,b)=>a.stack_index-b.stack_index);
+header(); buildSpine(DISKS); select(0);
+</script>
+</body>
+</html>
