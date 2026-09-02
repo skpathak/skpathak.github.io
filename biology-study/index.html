@@ -1,0 +1,158 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Biology Study — Lecture 3</title>
+<style>
+:root{--bg:#f6f7fb;--panel:#fff;--text:#172033;--muted:#677289;--line:#dfe4ec;--accent:#4f46e5;--accent2:#eef2ff;--good:#137333;--bad:#b42318;--warn:#9a6700}
+*{box-sizing:border-box} body{margin:0;font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:var(--bg);color:var(--text);line-height:1.5}
+button,select{font:inherit} button{cursor:pointer}.wrap{max-width:980px;margin:auto;padding:24px 16px 56px}.top{display:flex;gap:16px;align-items:flex-start;justify-content:space-between;flex-wrap:wrap}.eyebrow{font-size:.78rem;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--accent)}h1{margin:.2rem 0 .35rem;font-size:clamp(1.8rem,4vw,2.7rem);line-height:1.1}.sub{margin:0;color:var(--muted);max-width:700px}.tabs{display:flex;gap:8px;flex-wrap:wrap;margin:24px 0 16px}.tab,.btn{border:1px solid var(--line);background:var(--panel);color:var(--text);border-radius:12px;padding:10px 14px;font-weight:700;min-height:44px}.tab.active,.btn.primary{background:var(--accent);border-color:var(--accent);color:white}.btn.good{background:#e8f5ec;border-color:#b9dfc3;color:var(--good)}.btn.bad{background:#fff0ef;border-color:#f3c2be;color:var(--bad)}.grid{display:grid;gap:14px}.stats{grid-template-columns:repeat(4,minmax(0,1fr));margin:18px 0}.stat{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:14px}.stat b{display:block;font-size:1.45rem}.stat span{font-size:.82rem;color:var(--muted)}.panel{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:20px}.toolbar{display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap;margin-bottom:14px}.toolbar label{font-size:.9rem;font-weight:700}.toolbar select{min-height:44px;border:1px solid var(--line);border-radius:10px;padding:9px 12px;background:white;color:var(--text)}.card{min-height:300px;display:flex;flex-direction:column;justify-content:space-between}.meta{display:flex;justify-content:space-between;gap:10px;color:var(--muted);font-size:.85rem}.q{font-size:clamp(1.25rem,3vw,1.8rem);font-weight:800;margin:28px 0 18px}.answer{border-top:1px solid var(--line);margin-top:16px;padding-top:16px;font-size:1.08rem}.hint{margin-top:8px;color:var(--muted)}.actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:20px}.actions .btn{flex:1 1 140px}.hidden{display:none!important}.options{display:grid;gap:10px;margin:20px 0}.option{display:flex;gap:10px;align-items:flex-start;border:1px solid var(--line);border-radius:12px;padding:12px;background:white}.option input{margin-top:4px}.feedback{border-radius:12px;padding:12px 14px;margin-top:14px}.feedback.good{background:#e8f5ec;color:var(--good)}.feedback.bad{background:#fff0ef;color:var(--bad)}.progressbar{height:9px;border-radius:999px;background:#e9edf4;overflow:hidden;margin:10px 0 18px}.progressbar>div{height:100%;background:var(--accent);width:0;transition:width .2s ease}.missed-list{display:grid;gap:10px}.missed-item{border:1px solid var(--line);border-radius:12px;padding:14px}.missed-item b{display:block;margin-bottom:6px}.footer-note{color:var(--muted);font-size:.84rem;margin-top:20px}.tag{display:inline-block;background:var(--accent2);color:var(--accent);border-radius:999px;padding:4px 9px;font-size:.75rem;font-weight:800}
+@media(max-width:640px){.stats{grid-template-columns:repeat(2,minmax(0,1fr))}.panel{padding:16px}.wrap{padding-top:18px}}
+</style>
+</head>
+<body>
+<main class="wrap">
+  <div class="top">
+    <div><div class="eyebrow">Biology Study</div><h1>Lecture 3 Practice</h1><p class="sub">Flashcards and multiple-choice practice for pH, acids/bases, buffers, macromolecules, polymer reactions, functional groups, and carbohydrates.</p></div>
+    <span class="tag">Lecture 3 · 8/31/26</span>
+  </div>
+
+  <div class="stats grid" aria-label="Study progress">
+    <div class="stat"><b id="studied">0</b><span>Cards reviewed</span></div>
+    <div class="stat"><b id="known">0</b><span>Cards known</span></div>
+    <div class="stat"><b id="quizScore">0%</b><span>Quiz accuracy</span></div>
+    <div class="stat"><b id="missedCount">0</b><span>Questions to review</span></div>
+  </div>
+
+  <nav class="tabs" aria-label="Practice modes">
+    <button class="tab active" data-view="flash">Flashcards</button>
+    <button class="tab" data-view="quiz">Multiple choice</button>
+    <button class="tab" data-view="missed">Review missed</button>
+  </nav>
+
+  <section id="flashView" class="panel">
+    <div class="toolbar">
+      <div><strong>Flashcard deck</strong><div style="color:var(--muted);font-size:.85rem">Answer aloud before revealing the back.</div></div>
+      <div><label for="topic">Topic&nbsp;</label><select id="topic"><option value="all">All topics</option><option value="ph">pH, acids & bases</option><option value="buffers">Buffers</option><option value="macro">Macromolecules</option><option value="reactions">Dehydration & hydrolysis</option><option value="functional">Functional groups</option><option value="carbs">Carbohydrates</option></select></div>
+    </div>
+    <div class="card">
+      <div>
+        <div class="meta"><span id="fcCategory"></span><span id="fcCount"></span></div>
+        <div id="fcQuestion" class="q"></div>
+        <div id="fcAnswer" class="answer hidden"><strong id="fcAnswerText"></strong><div id="fcHint" class="hint"></div></div>
+      </div>
+      <div>
+        <button id="reveal" class="btn primary" style="width:100%">Reveal answer</button>
+        <div id="gradeBtns" class="actions hidden"><button id="again" class="btn bad">Again</button><button id="know" class="btn good">I know this</button></div>
+        <div class="actions"><button id="prev" class="btn">Previous</button><button id="shuffle" class="btn">Shuffle</button><button id="next" class="btn">Next</button></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="quizView" class="panel hidden">
+    <div class="toolbar"><div><strong>15-question practice quiz</strong><div style="color:var(--muted);font-size:.85rem">Immediate feedback; missed questions are saved for review.</div></div><button id="restartQuiz" class="btn">Restart quiz</button></div>
+    <div class="progressbar"><div id="quizBar"></div></div>
+    <div class="meta"><span id="quizNum"></span><span id="quizTopic"></span></div>
+    <div id="quizQuestion" class="q"></div>
+    <form id="quizForm"><div id="quizOptions" class="options"></div><button id="checkAnswer" class="btn primary" type="submit">Check answer</button></form>
+    <div id="feedback" class="feedback hidden"></div>
+    <button id="nextQuiz" class="btn primary hidden" style="margin-top:14px">Next question</button>
+  </section>
+
+  <section id="missedView" class="panel hidden">
+    <div class="toolbar"><div><strong>Review missed questions</strong><div style="color:var(--muted);font-size:.85rem">Questions stay here until you answer them correctly in the quiz.</div></div><button id="clearProgress" class="btn">Reset all progress</button></div>
+    <div id="missedList" class="missed-list"></div>
+  </section>
+
+  <p class="footer-note">Progress is stored only in this browser using local storage. No account or server is required.</p>
+</main>
+<script>
+const cards=[
+{t:'ph',c:'pH, acids & bases',q:'What does pH describe in this lecture?',a:'The H⁺ concentration of a solution.',h:'pH and H⁺ concentration have an inverse relationship.'},
+{t:'ph',c:'pH, acids & bases',q:'What does a change of 1 pH unit mean?',a:'A tenfold change in H⁺ concentration.',h:''},
+{t:'ph',c:'pH, acids & bases',q:'What does a low pH indicate?',a:'Higher H⁺ concentration and more acidity.',h:''},
+{t:'ph',c:'pH, acids & bases',q:'What does a high pH indicate?',a:'A basic solution.',h:''},
+{t:'ph',c:'pH, acids & bases',q:'What do acids do in water?',a:'They release hydrogen ions (H⁺).',h:''},
+{t:'ph',c:'pH, acids & bases',q:'How does HCl dissociate?',a:'HCl → H⁺ + Cl⁻',h:'The H⁺ concentration increases.'},
+{t:'ph',c:'pH, acids & bases',q:'What do bases do with H⁺ ions?',a:'Bases accept H⁺ ions.',h:''},
+{t:'ph',c:'pH, acids & bases',q:'How does NaOH dissociate?',a:'NaOH → Na⁺ + OH⁻',h:''},
+{t:'ph',c:'pH, acids & bases',q:'What happens when OH⁻ combines with H⁺?',a:'OH⁻ + H⁺ → H₂O',h:'This reduces free H⁺.'},
+{t:'ph',c:'pH, acids & bases',q:'How can water act in acid/base chemistry?',a:'As both a weak acid and a weak base.',h:''},
+{t:'ph',c:'pH, acids & bases',q:'Do weak acids and weak bases fully ionize in water?',a:'No. They do not completely dissociate.',h:'Some original molecules remain.'},
+{t:'buffers',c:'Buffers',q:'What is the main purpose of a buffer?',a:'To help maintain relatively constant pH.',h:'Buffers minimize changes in pH.'},
+{t:'buffers',c:'Buffers',q:'What is a buffer?',a:'A mixture of a weak acid and its corresponding base, or a weak base and its corresponding acid.',h:''},
+{t:'buffers',c:'Buffers',q:'What buffer pair is listed in the lecture?',a:'Bicarbonate ion (HCO₃⁻) and carbonic acid (H₂CO₃).',h:''},
+{t:'buffers',c:'Buffers',q:'What bicarbonate reaction with H⁺ is shown?',a:'HCO₃⁻ + H⁺ ⇌ H₂CO₃',h:''},
+{t:'buffers',c:'Buffers',q:'What happens when buffering capacity is exceeded?',a:'Additional acid or base can cause a much larger pH change.',h:'The buffer is no longer working effectively.'},
+{t:'macro',c:'Macromolecules',q:'What four macromolecule classes are listed?',a:'Proteins, carbohydrates, nucleic acids, and lipids.',h:''},
+{t:'macro',c:'Macromolecules',q:'What is a monomer?',a:'A smaller molecule that can be linked with others to form a polymer.',h:''},
+{t:'macro',c:'Macromolecules',q:'What is a polymer?',a:'Multiple monomers linked together.',h:''},
+{t:'macro',c:'Macromolecules',q:'Which macromolecule is the exception to the lecture’s polymer description?',a:'Lipids.',h:''},
+{t:'reactions',c:'Polymer reactions',q:'What is another name for a condensation reaction?',a:'Dehydration synthesis.',h:''},
+{t:'reactions',c:'Polymer reactions',q:'What does dehydration synthesis do?',a:'Forms covalent bonds between monomers to make polymers and releases water.',h:''},
+{t:'reactions',c:'Polymer reactions',q:'What does hydrolysis do?',a:'Breaks covalent bonds in polymers to make monomers and consumes water.',h:''},
+{t:'functional',c:'Functional groups',q:'Which functional group is associated with alcohols?',a:'Hydroxyl.',h:''},
+{t:'functional',c:'Functional groups',q:'Which functional group is associated with carboxylic acids?',a:'Carboxyl.',h:''},
+{t:'functional',c:'Functional groups',q:'Which functional group is associated with amines?',a:'Amino.',h:''},
+{t:'functional',c:'Functional groups',q:'Which functional group is associated with organic phosphates?',a:'Phosphate.',h:''},
+{t:'functional',c:'Functional groups',q:'Which functional group is associated with thiols?',a:'Sulfhydryl.',h:''},
+{t:'functional',c:'Functional groups',q:'Which functional group is associated with alkyl compounds?',a:'Methyl.',h:''},
+{t:'carbs',c:'Carbohydrates',q:'What is a monosaccharide?',a:'A simple sugar and the monomer of a complex carbohydrate.',h:''},
+{t:'carbs',c:'Carbohydrates',q:'What is a disaccharide?',a:'Two simple sugars linked by covalent bonds.',h:''},
+{t:'carbs',c:'Carbohydrates',q:'How many monosaccharides are in an oligosaccharide?',a:'3–20 monosaccharides.',h:''},
+{t:'carbs',c:'Carbohydrates',q:'How are polysaccharides described?',a:'Hundreds or thousands of monosaccharides.',h:''},
+{t:'carbs',c:'Carbohydrates',q:'What is a pentose?',a:'A 5-carbon sugar.',h:'Examples listed: ribose and deoxyribose.'},
+{t:'carbs',c:'Carbohydrates',q:'What is a hexose?',a:'A 6-carbon sugar.',h:'Examples listed: glucose and fructose.'},
+{t:'carbs',c:'Carbohydrates',q:'What are structural isomers?',a:'Molecules with the same chemical formula but different ways of joining their atoms.',h:''}
+];
+const quiz=[
+{id:1,t:'pH, acids & bases',q:'A solution with a low pH has which of the following?',o:['Low H⁺ concentration','High H⁺ concentration','High OH⁻ concentration only','No H⁺ ions'],a:1,e:'Low pH corresponds to higher H⁺ concentration and more acidity.'},
+{id:2,t:'pH, acids & bases',q:'If pH changes from 6 to 5, the H⁺ concentration has:',o:['Decreased 2-fold','Increased 2-fold','Increased 10-fold','Increased 100-fold'],a:2,e:'A change of 1 pH unit represents a tenfold change in H⁺ concentration.'},
+{id:3,t:'pH, acids & bases',q:'Which statement correctly describes an acid according to the lecture?',o:['It accepts H⁺ ions','It releases H⁺ ions in water','It releases OH⁻ ions only','It prevents molecules from ionizing'],a:1,e:'The lecture states that acids release hydrogen ions (H⁺) in water.'},
+{id:4,t:'pH, acids & bases',q:'When HCl dissolves in water, which reaction occurs?',o:['HCl → H⁺ + Cl⁻','HCl → OH⁻ + Cl⁺','HCl + H⁺ → H₂O','HCl → Na⁺ + OH⁻'],a:0,e:'The lecture shows HCl → H⁺ + Cl⁻.'},
+{id:5,t:'pH, acids & bases',q:'NaOH makes a solution basic primarily because:',o:['Na⁺ releases H⁺','OH⁻ combines with H⁺ to form water','NaOH increases H⁺ concentration','OH⁻ is converted directly into HCl'],a:1,e:'The lecture shows OH⁻ + H⁺ → H₂O.'},
+{id:6,t:'pH, acids & bases',q:'Water is described in the lecture as:',o:['Only a strong acid','Only a strong base','Both a weak acid and a weak base','Unable to ionize'],a:2,e:'Water acts as both a weak acid and a weak base.'},
+{id:7,t:'pH, acids & bases',q:'Which best describes a weak acid or weak base?',o:['It completely ionizes in water','It does not completely ionize in water','It never produces ions','It cannot participate in a buffer'],a:1,e:'Weak acids and weak bases do not fully ionize in water.'},
+{id:8,t:'Buffers',q:'What is the main function of a buffer?',o:['Completely prevent any change in H⁺','Maintain relatively constant pH','Make every solution neutral','Permanently remove all acids'],a:1,e:'Buffers minimize changes in pH.'},
+{id:9,t:'Buffers',q:'The bicarbonate/carbonic acid buffer system includes which pair?',o:['Na⁺ and Cl⁻','HCO₃⁻ and H₂CO₃','HCl and NaOH','H₂O and O₂'],a:1,e:'The lecture lists bicarbonate ion and carbonic acid.'},
+{id:10,t:'Buffers',q:'What happens when buffering capacity is exceeded?',o:['pH can no longer change','Added acid or base can cause a much larger pH change','The solution becomes pure water','All molecules stop ionizing'],a:1,e:'Once buffering capacity is exceeded, the buffer no longer prevents large pH changes.'},
+{id:11,t:'Macromolecules',q:'Which is NOT one of the four macromolecule classes listed?',o:['Proteins','Carbohydrates','Nucleic acids','Minerals'],a:3,e:'The four listed are proteins, carbohydrates, nucleic acids, and lipids.'},
+{id:12,t:'Polymer reactions',q:'Which statement correctly describes dehydration synthesis?',o:['Breaks polymers into monomers and consumes water','Forms bonds between monomers and releases water','Breaks covalent bonds without water','Converts acids directly into bases'],a:1,e:'Condensation/dehydration synthesis forms covalent bonds and releases water.'},
+{id:13,t:'Polymer reactions',q:'Which statement correctly describes hydrolysis?',o:['Joins monomers and releases water','Breaks polymers into monomers and consumes water','Produces polymers without covalent bonds','Only occurs with lipids'],a:1,e:'Hydrolysis breaks covalent bonds and consumes water.'},
+{id:14,t:'Carbohydrates',q:'Which carbohydrate classification is correctly matched?',o:['Monosaccharide — two sugars','Disaccharide — 3–20 sugars','Oligosaccharide — 3–20 sugars','Polysaccharide — exactly two sugars'],a:2,e:'The lecture defines oligosaccharides as 3–20 monosaccharides.'},
+{id:15,t:'Carbohydrates',q:'Two molecules have the same chemical formula but their atoms are joined differently. They are:',o:['Polymers','Buffers','Structural isomers','Functional groups'],a:2,e:'Structural isomers have the same chemical formula but differ in how atoms are joined.'}
+];
+
+const KEY='biologyLecture3ProgressV1';
+let state={studied:0,known:0,quizCorrect:0,quizAnswered:0,missed:[]};
+try{state={...state,...JSON.parse(localStorage.getItem(KEY)||'{}')}}catch(e){}
+function save(){localStorage.setItem(KEY,JSON.stringify(state));renderStats()}
+function renderStats(){document.querySelector('#studied').textContent=state.studied;document.querySelector('#known').textContent=state.known;document.querySelector('#quizScore').textContent=state.quizAnswered?Math.round(100*state.quizCorrect/state.quizAnswered)+'%':'0%';document.querySelector('#missedCount').textContent=state.missed.length}
+
+const views={flash:document.querySelector('#flashView'),quiz:document.querySelector('#quizView'),missed:document.querySelector('#missedView')};
+document.querySelectorAll('.tab').forEach(b=>b.addEventListener('click',()=>{document.querySelectorAll('.tab').forEach(x=>x.classList.toggle('active',x===b));Object.entries(views).forEach(([k,v])=>v.classList.toggle('hidden',k!==b.dataset.view));if(b.dataset.view==='missed')renderMissed()}));
+
+let deck=[...cards],fi=0,revealed=false;
+const topic=document.querySelector('#topic');
+function filtered(){return topic.value==='all'?[...cards]:cards.filter(x=>x.t===topic.value)}
+function shuffleArray(a){a=[...a];for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
+function renderCard(){if(!deck.length)deck=filtered();fi=(fi+deck.length)%deck.length;const c=deck[fi];revealed=false;document.querySelector('#fcCategory').textContent=c.c;document.querySelector('#fcCount').textContent=`Card ${fi+1} of ${deck.length}`;document.querySelector('#fcQuestion').textContent=c.q;document.querySelector('#fcAnswerText').textContent=c.a;document.querySelector('#fcHint').textContent=c.h;document.querySelector('#fcAnswer').classList.add('hidden');document.querySelector('#reveal').classList.remove('hidden');document.querySelector('#gradeBtns').classList.add('hidden')}
+document.querySelector('#reveal').addEventListener('click',()=>{revealed=true;document.querySelector('#fcAnswer').classList.remove('hidden');document.querySelector('#reveal').classList.add('hidden');document.querySelector('#gradeBtns').classList.remove('hidden')});
+document.querySelector('#know').addEventListener('click',()=>{state.studied++;state.known++;save();fi++;renderCard()});
+document.querySelector('#again').addEventListener('click',()=>{state.studied++;save();const c=deck[fi];deck.splice(fi,1);deck.splice(Math.min(fi+3,deck.length),0,c);renderCard()});
+document.querySelector('#next').addEventListener('click',()=>{fi++;renderCard()});document.querySelector('#prev').addEventListener('click',()=>{fi--;renderCard()});document.querySelector('#shuffle').addEventListener('click',()=>{deck=shuffleArray(filtered());fi=0;renderCard()});topic.addEventListener('change',()=>{deck=shuffleArray(filtered());fi=0;renderCard()});
+
+let qi=0,checked=false;
+function renderQuiz(){checked=false;const q=quiz[qi];document.querySelector('#quizNum').textContent=`Question ${qi+1} of ${quiz.length}`;document.querySelector('#quizTopic').textContent=q.t;document.querySelector('#quizQuestion').textContent=q.q;document.querySelector('#quizBar').style.width=`${100*qi/quiz.length}%`;const box=document.querySelector('#quizOptions');box.innerHTML='';q.o.forEach((txt,i)=>{const lab=document.createElement('label');lab.className='option';lab.innerHTML=`<input type="radio" name="answer" value="${i}"><span><strong>${String.fromCharCode(65+i)}.</strong> ${txt}</span>`;box.appendChild(lab)});document.querySelector('#feedback').className='feedback hidden';document.querySelector('#feedback').textContent='';document.querySelector('#checkAnswer').classList.remove('hidden');document.querySelector('#nextQuiz').classList.add('hidden')}
+document.querySelector('#quizForm').addEventListener('submit',e=>{e.preventDefault();if(checked)return;const sel=document.querySelector('input[name="answer"]:checked');if(!sel){const f=document.querySelector('#feedback');f.className='feedback bad';f.textContent='Choose an answer first.';return}checked=true;const q=quiz[qi],chosen=Number(sel.value),ok=chosen===q.a;state.quizAnswered++;if(ok){state.quizCorrect++;state.missed=state.missed.filter(id=>id!==q.id)}else if(!state.missed.includes(q.id))state.missed.push(q.id);save();const f=document.querySelector('#feedback');f.className='feedback '+(ok?'good':'bad');f.textContent=(ok?'Correct. ':'Not quite. Correct answer: '+String.fromCharCode(65+q.a)+'. ')+q.e;document.querySelector('#checkAnswer').classList.add('hidden');document.querySelector('#nextQuiz').classList.remove('hidden');document.querySelector('#quizBar').style.width=`${100*(qi+1)/quiz.length}%`});
+document.querySelector('#nextQuiz').addEventListener('click',()=>{if(qi<quiz.length-1){qi++;renderQuiz()}else{document.querySelector('#quizQuestion').textContent='Quiz complete';document.querySelector('#quizOptions').innerHTML='';document.querySelector('#quizForm').classList.add('hidden');document.querySelector('#feedback').className='feedback good';document.querySelector('#feedback').textContent=`You have completed the quiz. Current saved accuracy: ${state.quizAnswered?Math.round(100*state.quizCorrect/state.quizAnswered):0}%.`;document.querySelector('#nextQuiz').classList.add('hidden')}});
+document.querySelector('#restartQuiz').addEventListener('click',()=>{qi=0;document.querySelector('#quizForm').classList.remove('hidden');renderQuiz()});
+
+function renderMissed(){const box=document.querySelector('#missedList');box.innerHTML='';const items=quiz.filter(q=>state.missed.includes(q.id));if(!items.length){box.innerHTML='<div class="missed-item"><b>No missed questions saved.</b><span style="color:var(--muted)">Complete the quiz and anything answered incorrectly will appear here.</span></div>';return}items.forEach(q=>{const d=document.createElement('div');d.className='missed-item';d.innerHTML=`<b>${q.id}. ${q.q}</b><div>Correct answer: <strong>${String.fromCharCode(65+q.a)}. ${q.o[q.a]}</strong></div><div style="color:var(--muted);margin-top:4px">${q.e}</div>`;box.appendChild(d)})}
+document.querySelector('#clearProgress').addEventListener('click',()=>{if(confirm('Reset all saved Lecture 3 progress in this browser?')){state={studied:0,known:0,quizCorrect:0,quizAnswered:0,missed:[]};save();renderMissed()}});
+
+renderStats();deck=shuffleArray(cards);renderCard();renderQuiz();
+</script>
+</body>
+</html>
