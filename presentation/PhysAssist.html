@@ -1,0 +1,777 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PhysAssist — A Librarian for MRI Physics</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,700&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --base:#F2F4F7;
+    --paper:#FFFFFF;
+    --ink:#14213D;
+    --blue:#003594;
+    --gold:#E0A526;
+    --muted:#63708A;
+    --rule:#CBD2DE;
+    --soft:#E4E8EF;
+    --display:"Bricolage Grotesque", "Helvetica Neue", Arial, sans-serif;
+    --serif:"Newsreader", Georgia, "Times New Roman", serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%;background:var(--ink);overflow:hidden;color:var(--ink)}
+  body{font-family:var(--serif);font-size:22px;line-height:1.45;-webkit-font-smoothing:antialiased}
+
+  /* Fixed 1280x720 stage scaled to the viewport */
+  #stage{
+    position:absolute;left:50%;top:50%;width:1280px;height:720px;
+    transform:translate(-50%,-50%) scale(var(--s,1));
+    transform-origin:center center;background:var(--base);
+    box-shadow:0 0 0 1px rgba(0,0,0,.15);
+  }
+  .slide{
+    position:absolute;inset:0;padding:64px 88px 72px 88px;
+    display:none;flex-direction:column;
+  }
+  .slide.active{display:flex}
+  #opt{cursor:pointer;color:var(--blue);margin-right:14px}
+  #opt:hover{text-decoration:underline}
+  .rag text{font-family:var(--display);fill:var(--ink)}
+  .rag .t{font-size:17px;font-weight:600}
+  .rag .s{font-size:13.5px;fill:var(--muted)}
+  .rag .lab{font-size:15px;font-weight:600;fill:var(--muted)}
+  .rag .big{font-size:20px;font-weight:700;fill:var(--blue)}
+
+  /* Type scale */
+  h1{font-family:var(--display);font-weight:700;font-size:78px;line-height:.98;letter-spacing:-.02em;color:var(--ink)}
+  h2{font-family:var(--display);font-weight:600;font-size:44px;line-height:1.05;letter-spacing:-.015em;color:var(--ink);margin-bottom:28px;max-width:1000px}
+  h3{font-family:var(--display);font-weight:600;font-size:22px;line-height:1.2;color:var(--blue);margin-bottom:8px}
+  p{max-width:820px}
+  p+p{margin-top:14px}
+  .lead{font-size:26px;line-height:1.4;max-width:900px}
+  .small{font-size:18px;color:var(--muted);line-height:1.4}
+  em{font-style:italic}
+  strong{font-weight:500;color:var(--blue)}
+  .eq{font-style:italic;white-space:nowrap}
+  sub{font-size:.7em;vertical-align:-.25em}
+
+  .section-tag{
+    font-family:var(--display);font-weight:600;font-size:16px;color:var(--blue);
+    margin-bottom:14px;padding-left:14px;border-left:3px solid var(--gold);line-height:1.2;
+  }
+
+  /* Callout (the thesis) */
+  .thesis{
+    border-left:6px solid var(--gold);padding:18px 28px;background:var(--paper);
+    font-size:30px;line-height:1.3;max-width:900px;margin:28px 0 8px;font-weight:500;
+  }
+
+  /* Number grid */
+  .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:24px;margin:20px 0 28px}
+  .stat{background:var(--paper);padding:22px 24px;border-top:3px solid var(--blue)}
+  .stat.gold{border-top-color:var(--gold)}
+  .stat .n{font-family:var(--display);font-weight:700;font-size:56px;line-height:1;letter-spacing:-.02em;color:var(--ink)}
+  .stat .l{font-size:18px;color:var(--muted);margin-top:8px;line-height:1.3}
+
+  /* Columns */
+  .cols{display:grid;gap:36px}
+  .cols-2{grid-template-columns:1fr 1fr}
+  .cols-3{grid-template-columns:1fr 1fr 1fr}
+  .col p{max-width:none}
+
+  /* Lists */
+  ul,ol{padding-left:24px;max-width:860px}
+  li{margin-bottom:10px}
+  li::marker{color:var(--blue);font-weight:600}
+  ol.steps{list-style:none;padding:0;counter-reset:s}
+  ol.steps li{counter-increment:s;display:grid;grid-template-columns:52px 1fr;gap:16px;margin-bottom:16px;align-items:start}
+  ol.steps li::before{
+    content:counter(s);font-family:var(--display);font-weight:700;font-size:34px;line-height:1;
+    color:var(--gold);padding-top:2px;
+  }
+
+  /* Table */
+  table{border-collapse:collapse;width:100%;font-size:18px;background:var(--paper)}
+  th{font-family:var(--display);font-weight:600;font-size:16px;color:var(--blue);text-align:left;padding:8px 14px;border-bottom:2px solid var(--blue)}
+  td{padding:6px 14px;border-bottom:1px solid var(--soft);line-height:1.3}
+  td:first-child{font-family:var(--display);font-weight:700;color:var(--ink)}
+
+  /* Generation panels */
+  .gen{background:var(--paper);padding:22px 24px;border-top:3px solid var(--rule);position:relative}
+  .gen.g1{border-top-color:#9AA6BA}
+  .gen.g2{border-top-color:var(--blue)}
+  .gen.g3{border-top-color:var(--gold)}
+  .gen .k{font-family:var(--display);font-weight:700;font-size:15px;color:var(--muted);margin-bottom:4px}
+  .gen .count{font-family:var(--display);font-weight:700;font-size:30px;letter-spacing:-.02em;margin-top:12px;color:var(--ink)}
+  .gen p{font-size:18.5px;line-height:1.4}
+  .fix{display:inline-block;background:var(--ink);color:#fff;padding:3px 10px;font-family:var(--display);font-size:15px;font-weight:600;margin-top:12px}
+
+  /* Footer / chrome */
+  .foot{
+    position:absolute;left:88px;right:88px;bottom:28px;display:flex;justify-content:space-between;
+    font-family:var(--display);font-size:14px;color:var(--muted);font-weight:600;align-items:center;
+  }
+  #progress{position:absolute;left:0;bottom:0;height:4px;background:var(--gold);width:0;transition:width .25s ease}
+  .nav{display:flex;gap:8px;align-items:center}
+  #counter{margin-right:10px}
+  .nav button{
+    font-family:var(--display);font-weight:600;font-size:14px;background:transparent;color:var(--blue);
+    border:1px solid var(--rule);padding:4px 12px;cursor:pointer;border-radius:3px;
+  }
+  .nav button:hover{background:var(--paper)}
+  .nav button:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+
+  /* Title slide */
+  .title{justify-content:flex-end;padding-bottom:110px}
+  .title .kicker{font-family:var(--display);font-weight:600;font-size:18px;color:var(--blue);margin-bottom:22px}
+  .title .sub{font-size:28px;max-width:860px;margin-top:22px;color:var(--ink)}
+  .title .who{margin-top:44px;font-family:var(--display);font-size:20px;color:var(--ink);line-height:1.5}
+  .title .who span{color:var(--muted);display:block;font-size:18px}
+  .fid{position:absolute;right:0;top:0;width:1280px;height:300px;pointer-events:none}
+
+  /* Ruler slide */
+  .ruler{display:grid;grid-template-columns:1fr 1fr;gap:28px;margin:18px 0 26px}
+  .ruler .box{background:var(--paper);padding:24px 28px;border-top:3px solid var(--rule)}
+  .ruler .box.win{border-top-color:var(--gold)}
+  .ruler .n{font-family:var(--display);font-weight:700;font-size:96px;line-height:1;letter-spacing:-.03em}
+  .ruler .box.win .n{color:var(--blue)}
+  .ruler .l{font-size:19px;color:var(--muted);margin-top:8px}
+
+  /* Pipeline SVG text */
+  .pipe text{font-family:var(--display);fill:var(--ink)}
+  .pipe .lab{font-size:15px;font-weight:600;fill:var(--muted)}
+  .pipe .box-t{font-size:17px;font-weight:600}
+  .pipe .box-s{font-size:13px;fill:var(--muted)}
+  .pipe .role{font-size:20px;font-weight:700;fill:var(--blue)}
+
+  /* Sources */
+  .src{font-size:17px;line-height:1.45;max-width:1100px}
+  .src p{max-width:none}
+  .src dl{display:grid;grid-template-columns:200px 1fr;row-gap:12px;column-gap:20px}
+  .src dt{font-family:var(--display);font-weight:600;color:var(--blue);font-size:16px;padding-top:2px}
+  .src a{color:var(--blue)}
+
+  /* Optional slides */
+  .optional .section-tag{border-left-color:var(--muted)}
+  .badge{position:absolute;top:64px;right:88px;font-family:var(--display);font-weight:600;font-size:14px;color:var(--muted);border:1px solid var(--rule);padding:4px 10px;border-radius:3px;background:var(--paper)}
+  .rag text{font-family:var(--display);fill:var(--ink)}
+  .rag .t{font-size:17px;font-weight:600}
+  .rag .s{font-size:13.5px;fill:var(--muted)}
+  .rag .m{font-family:var(--serif);font-style:italic;font-size:15px;fill:var(--ink)}
+  .rag .cl{font-size:13px;font-weight:600;fill:var(--blue)}
+  .hint{font-family:var(--display);font-size:14px;color:var(--muted);font-weight:600}
+  @media (prefers-reduced-motion:reduce){#progress{transition:none}}
+</style>
+</head>
+<body>
+<div id="stage">
+
+<!-- 1 · Title -->
+<section class="slide title active">
+  <svg class="fid" viewBox="0 0 1280 300" aria-hidden="true">
+    <path id="fidpath" fill="none" stroke="#E0A526" stroke-width="2.5" stroke-linecap="round"/>
+    <path d="M60 150 H1220" stroke="#CBD2DE" stroke-width="1"/>
+  </svg>
+  <div class="kicker">Retrieval-augmented generation · MRI physics · local deployment</div>
+  <h1>PhysAssist</h1>
+  <div class="sub">A librarian for MRI physics: question answering built over mriquestions.com and the 2,261 papers it links to — every answer written only from pages the system can show you.</div>
+  <div class="who">Sudhir K Pathak <span>University of Pittsburgh · September 2026</span></div>
+</section>
+
+<!-- 2 · At a glance -->
+<section class="slide">
+  <div class="section-tag">At a glance</div>
+  <h2>A working system, pending expert validation</h2>
+  <div class="stats">
+    <div class="stat"><div class="n">798</div><div class="l">Q&amp;A pages, plus 2,261 linked PDFs</div></div>
+    <div class="stat"><div class="n">50,454</div><div class="l">indexed chunks</div></div>
+    <div class="stat"><div class="n">32B</div><div class="l">Qwen2.5 writer, served on one GPU</div></div>
+    <div class="stat gold"><div class="n">100%</div><div class="l">local — nothing leaves the machine</div></div>
+  </div>
+  <p class="lead">The hardest part turned out to be neither the search nor the language model, but knowing whether any of it is right.</p>
+</section>
+
+<!-- 3 · The problem -->
+<section class="slide">
+  <div class="section-tag">The problem</div>
+  <h2>Two tools, two failure modes</h2>
+  <div class="cols cols-2">
+    <div class="col">
+      <h3>Ask a general chatbot</h3>
+      <p>It answers fluently. Some of the answer will be wrong, and nothing on the screen tells you which part.</p>
+    </div>
+    <div class="col">
+      <h3>Ask a search engine</h3>
+      <p>You get pages, not an answer. You still have to read them.</p>
+    </div>
+  </div>
+  <div class="thesis">In a field where being confidently wrong about a nulling time is a clinical problem, traceability is not optional.</div>
+</section>
+
+<!-- 4 · The idea -->
+<section class="slide">
+  <div class="section-tag">The idea</div>
+  <h2>A librarian and a writer, working as a pair</h2>
+  <div class="cols cols-2">
+    <div class="col">
+      <h3>The librarian</h3>
+      <p>Searches a fixed shelf of trusted documents and pulls out the handful most likely to contain the answer.</p>
+    </div>
+    <div class="col">
+      <h3>The writer</h3>
+      <p>A language model that reads only those passages and composes a reply, citing which passage each claim came from.</p>
+    </div>
+  </div>
+  <div class="thesis">If the librarian brings the wrong pages, the answer is wrong no matter how good the writer is.</div>
+  <p class="small">Almost every design decision in this project follows from that one sentence. The writer holds no MRI knowledge we rely on — the only material in front of it is six passages, each with a real URL a reader can open and check.</p>
+</section>
+
+<!-- Optional · RAG 1 -->
+<section class="slide optional">
+  <div class="badge">Optional · How RAG works, 1 of 3</div>
+  <div class="section-tag">How RAG works</div>
+  <h2>First, the knowledge is cut into chunks</h2>
+  <div class="cols cols-2" style="grid-template-columns:850px 1fr;gap:36px;align-items:start">
+    <div>
+  <svg class="rag" viewBox="0 0 850 320" width="850" height="320" aria-label="Documents of several kinds are cut into chunks">
+    <defs><marker id="ar2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#63708A"/></marker></defs>
+    <g>
+      <rect x="0" y="0" width="230" height="64" fill="#fff" stroke="#CBD2DE"/><text x="16" y="27" class="t">Q&amp;A web pages</text><text x="16" y="48" class="s">798 pages · question + answer</text>
+      <rect x="0" y="80" width="230" height="64" fill="#fff" stroke="#CBD2DE"/><text x="16" y="107" class="t">Research papers</text><text x="16" y="128" class="s">2,261 PDFs linked from the site</text>
+      <rect x="0" y="160" width="230" height="64" fill="#fff" stroke="#CBD2DE"/><text x="16" y="187" class="t">Scanned papers</text><text x="16" y="208" class="s">~155 images → OCR → subscript repair</text>
+      <rect x="0" y="240" width="230" height="64" fill="#fff" stroke="#CBD2DE"/><text x="16" y="267" class="t">Textbook chapters</text><text x="16" y="288" class="s">headings, equations, definitions</text>
+    </g>
+    <path d="M230 32 H300 V152 H340" fill="none" stroke="#63708A" stroke-width="1.5"/>
+    <path d="M230 112 H300" fill="none" stroke="#63708A" stroke-width="1.5"/>
+    <path d="M230 192 H300" fill="none" stroke="#63708A" stroke-width="1.5"/>
+    <path d="M230 272 H300 V152" fill="none" stroke="#63708A" stroke-width="1.5"/>
+    <path d="M300 152 H340" fill="none" stroke="#63708A" stroke-width="1.5" marker-end="url(#ar2)"/>
+    <rect x="344" y="110" width="200" height="84" fill="#14213D"/>
+    <text x="362" y="143" class="t" style="fill:#fff">Chunk</text>
+    <text x="362" y="166" class="s" style="fill:#CBD2DE">cut into pieces the embedder</text>
+    <text x="362" y="182" class="s" style="fill:#CBD2DE">can read whole (~320 words)</text>
+    <path d="M544 152 H600" fill="none" stroke="#63708A" stroke-width="1.5" marker-end="url(#ar2)"/>
+    <g>
+      <rect x="604" y="0" width="240" height="40" fill="#fff" stroke="#E0A526" stroke-width="1.5"/><text x="616" y="25" class="m">What is inversion recovery? …</text>
+      <rect x="604" y="52" width="240" height="40" fill="#fff" stroke="#E0A526" stroke-width="1.5"/><text x="616" y="77" class="m">Nulling: TI = T1 · ln 2, where …</text>
+      <rect x="604" y="104" width="240" height="40" fill="#fff" stroke="#E0A526" stroke-width="1.5"/><text x="616" y="129" class="m">Receiver bandwidth sets the …</text>
+      <rect x="604" y="156" width="240" height="40" fill="#fff" stroke="#E0A526" stroke-width="1.5"/><text x="616" y="181" class="m">The Larmor equation ω = γB₀ …</text>
+      <rect x="604" y="208" width="240" height="40" fill="#fff" stroke="#E0A526" stroke-width="1.5"/><text x="616" y="233" class="m">FA (fractional anisotropy) is …</text>
+      <text x="616" y="282" class="s">… 50,454 self-contained chunks</text>
+    </g>
+  </svg>
+    </div>
+    <div class="col">
+      <h3>A chunk must carry its own meaning</h3>
+      <ul style="font-size:18px;max-width:none;padding-left:20px">
+        <li>Keep a question with its answer.</li>
+        <li>Keep an equation with the lines that define its symbols.</li>
+        <li>Drop navigation, reference lists and problem sets — they match questions and answer nothing.</li>
+        <li>A fact split across two chunks is findable from neither.</li>
+      </ul>
+    </div>
+  </div>
+  <p class="small" style="margin-top:14px">Chunking looks like preprocessing. It is where most of the retrieval quality is won or lost — which is why it took three generations (next section).</p>
+</section>
+
+<!-- Optional · RAG 2 -->
+<section class="slide optional">
+  <div class="badge">Optional · How RAG works, 2 of 3</div>
+  <div class="section-tag">How RAG works</div>
+  <h2>Each chunk becomes a vector: nearby means similar</h2>
+  <div class="cols cols-2" style="grid-template-columns:1fr 1.1fr;gap:44px;align-items:start">
+    <div class="col">
+      <svg class="rag" viewBox="0 0 520 250" width="520" height="250" aria-label="A chunk is turned into a 1,024-number vector by the embedding model">
+        <defs><marker id="ar3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#63708A"/></marker></defs>
+        <rect x="0" y="20" width="200" height="72" fill="#fff" stroke="#E0A526" stroke-width="1.5"/>
+        <text x="14" y="48" class="m">Nulling: TI = T1 · ln 2,</text>
+        <text x="14" y="70" class="m">where T1 is the …</text>
+        <path d="M200 56 H248" fill="none" stroke="#63708A" stroke-width="1.5" marker-end="url(#ar3)"/>
+        <rect x="252" y="28" width="130" height="56" fill="#14213D"/>
+        <text x="266" y="52" class="t" style="fill:#fff">Embedder</text>
+        <text x="266" y="72" class="s" style="fill:#CBD2DE">BGE-large</text>
+        <path d="M382 56 H430" fill="none" stroke="#63708A" stroke-width="1.5" marker-end="url(#ar3)"/>
+        <text x="436" y="44" class="t">1,024</text>
+        <text x="436" y="66" class="s">numbers</text>
+        <text x="0" y="140" class="m">[ 0.12, −0.83, 0.07, 0.41, −0.29, 0.66, … , 0.05 ]</text>
+        <text x="0" y="176" class="s">The numbers are not readable. What matters is their</text>
+        <text x="0" y="196" class="s">geometry: two passages about the same idea land close</text>
+        <text x="0" y="216" class="s">together, even when they share no words.</text>
+        <text x="0" y="244" class="s">Stored in a vector database (FAISS): 50,454 points.</text>
+      </svg>
+    </div>
+    <div class="col">
+      <svg class="rag" viewBox="0 0 560 300" width="560" height="300" aria-label="Two-dimensional sketch of the vector space with topic clusters">
+        <rect x="0" y="0" width="560" height="300" fill="#fff" stroke="#CBD2DE"/>
+        <text x="14" y="22" class="s">the shelf, sketched in two dimensions (really 1,024)</text>
+        <g fill="#003594" opacity=".8">
+          <circle cx="110" cy="90" r="5"/><circle cx="130" cy="108" r="5"/><circle cx="96" cy="120" r="5"/><circle cx="142" cy="84" r="5"/><circle cx="118" cy="136" r="5"/><circle cx="154" cy="122" r="5"/><circle cx="84" cy="98" r="5"/>
+        </g>
+        <text x="60" y="164" class="cl">inversion recovery · T1</text>
+        <g fill="#003594" opacity=".8">
+          <circle cx="330" cy="70" r="5"/><circle cx="352" cy="88" r="5"/><circle cx="312" cy="96" r="5"/><circle cx="360" cy="62" r="5"/><circle cx="338" cy="112" r="5"/><circle cx="374" cy="100" r="5"/>
+        </g>
+        <text x="300" y="140" class="cl">Larmor frequency · field strength</text>
+        <g fill="#003594" opacity=".8">
+          <circle cx="440" cy="210" r="5"/><circle cx="462" cy="228" r="5"/><circle cx="426" cy="236" r="5"/><circle cx="470" cy="200" r="5"/><circle cx="448" cy="252" r="5"/><circle cx="486" cy="240" r="5"/><circle cx="500" cy="216" r="5"/>
+        </g>
+        <text x="372" y="282" class="cl">diffusion · FA · tractography</text>
+        <g fill="#003594" opacity=".8">
+          <circle cx="190" cy="220" r="5"/><circle cx="212" cy="238" r="5"/><circle cx="176" cy="246" r="5"/><circle cx="220" cy="210" r="5"/><circle cx="198" cy="262" r="5"/>
+        </g>
+        <text x="140" y="290" class="cl">bandwidth · chemical shift</text>
+        <g fill="#9AA6BA" opacity=".6"><circle cx="270" cy="180" r="4"/><circle cx="292" cy="160" r="4"/><circle cx="250" cy="60" r="4"/><circle cx="410" cy="150" r="4"/><circle cx="60" cy="240" r="4"/><circle cx="520" cy="80" r="4"/></g>
+      </svg>
+    </div>
+  </div>
+</section>
+
+<!-- Optional · RAG 3 -->
+<section class="slide optional">
+  <div class="badge">Optional · How RAG works, 3 of 3</div>
+  <div class="section-tag">How RAG works</div>
+  <h2>A question takes the same path to the writer</h2>
+  <div class="cols cols-2" style="grid-template-columns:1.1fr 1fr;gap:44px;align-items:start">
+    <div class="col">
+      <svg class="rag" viewBox="0 0 560 300" width="560" height="300" aria-label="The question lands in the same space and the nearest chunks are selected">
+        <rect x="0" y="0" width="560" height="300" fill="#fff" stroke="#CBD2DE"/>
+        <text x="14" y="22" class="s">the same space, with a question dropped in</text>
+        <g fill="#003594" opacity=".35">
+          <circle cx="110" cy="90" r="5"/><circle cx="130" cy="108" r="5"/><circle cx="96" cy="120" r="5"/><circle cx="142" cy="84" r="5"/><circle cx="118" cy="136" r="5"/><circle cx="154" cy="122" r="5"/><circle cx="84" cy="98" r="5"/>
+          <circle cx="440" cy="210" r="5"/><circle cx="462" cy="228" r="5"/><circle cx="426" cy="236" r="5"/><circle cx="470" cy="200" r="5"/><circle cx="448" cy="252" r="5"/><circle cx="486" cy="240" r="5"/><circle cx="500" cy="216" r="5"/>
+        </g>
+        <circle cx="342" cy="90" r="44" fill="none" stroke="#E0A526" stroke-width="1.5" stroke-dasharray="4 4"/>
+        <g fill="#003594" opacity=".9">
+          <circle cx="330" cy="70" r="5"/><circle cx="352" cy="88" r="5"/><circle cx="312" cy="96" r="5"/><circle cx="360" cy="62" r="5"/><circle cx="338" cy="112" r="5"/><circle cx="374" cy="100" r="5"/>
+        </g>
+        <path d="M342 78 l4 9 10 1 -7 7 2 10 -9 -5 -9 5 2 -10 -7 -7 10 -1 z" fill="#E0A526"/>
+        <text x="300" y="158" class="cl">nearest 6 chunks, one per document</text>
+        <text x="24" y="196" class="m">"Hydrogen resonates at 64 MHz at 1.5 T —</text>
+        <text x="24" y="218" class="m">what is the frequency at 7 T?"</text>
+        <text x="24" y="248" class="s">The word "Larmor" is not in the question. It lands there</text>
+        <text x="24" y="268" class="s">anyway, because the embedding encodes the concept.</text>
+      </svg>
+    </div>
+    <div class="col">
+      <ol class="steps" style="font-size:19px;max-width:none">
+        <li><div><strong>Embed the question</strong> with the same model that embedded the chunks, so both live in one space.</div></li>
+        <li><div><strong>Find the nearest chunks</strong> by cosine similarity — 60 candidates, re-scored by a cross-encoder, best six kept.</div></li>
+        <li><div><strong>Hand only those six to the writer.</strong> It composes the answer from them, citing [1], [2] against each passage.</div></li>
+        <li><div><strong>Show the sources.</strong> The reader can open every page the answer rests on.</div></li>
+      </ol>
+      <p class="small">Retrieval is search by meaning rather than by keyword; generation is writing under constraint. The next slide shows the actual pipeline.</p>
+    </div>
+  </div>
+</section>
+
+
+<!-- 5 · Pipeline -->
+<section class="slide">
+  <div class="section-tag">Architecture</div>
+  <h2>The writer has exactly one input</h2>
+  <svg class="pipe" viewBox="0 0 1104 420" width="1104" height="420" aria-label="Pipeline: shelf, librarian, writer">
+    <defs><marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="#63708A"/></marker></defs>
+    <!-- Shelf -->
+    <text x="0" y="24" class="role">The shelf</text>
+    <rect x="0" y="40" width="236" height="86" fill="#fff" stroke="#CBD2DE"/>
+    <text x="14" y="68" class="box-t">798 pages + 2,106 PDFs</text>
+    <text x="14" y="90" class="box-s">→ 50,454 chunks</text>
+    <text x="14" y="110" class="box-s">indexed once</text>
+    <!-- Librarian -->
+    <text x="0" y="200" class="role">Librarian</text>
+    <rect x="0" y="216" width="1104" height="120" fill="none" stroke="#003594" stroke-dasharray="4 4"/>
+    <g>
+      <rect x="18" y="238" width="150" height="76" fill="#fff" stroke="#CBD2DE"/>
+      <text x="32" y="266" class="box-t">Question</text>
+      <text x="32" y="288" class="box-s">natural language</text>
+    </g>
+    <path d="M168 276 H210" stroke="#63708A" stroke-width="1.5" marker-end="url(#ar)"/>
+    <g>
+      <rect x="212" y="238" width="150" height="76" fill="#fff" stroke="#CBD2DE"/>
+      <text x="226" y="266" class="box-t">Embed</text>
+      <text x="226" y="288" class="box-s">BGE-large · 1024-d</text>
+    </g>
+    <path d="M362 276 H404" stroke="#63708A" stroke-width="1.5" marker-end="url(#ar)"/>
+    <g>
+      <rect x="406" y="238" width="150" height="76" fill="#fff" stroke="#CBD2DE"/>
+      <text x="420" y="266" class="box-t">Search</text>
+      <text x="420" y="288" class="box-s">FAISS cosine · 60 cand.</text>
+    </g>
+    <path d="M556 276 H598" stroke="#63708A" stroke-width="1.5" marker-end="url(#ar)"/>
+    <g>
+      <rect x="600" y="238" width="150" height="76" fill="#fff" stroke="#CBD2DE"/>
+      <text x="614" y="266" class="box-t">Re-rank</text>
+      <text x="614" y="288" class="box-s">cross-encoder</text>
+    </g>
+    <path d="M750 276 H792" stroke="#63708A" stroke-width="1.5" marker-end="url(#ar)"/>
+    <g>
+      <rect x="794" y="238" width="150" height="76" fill="#fff" stroke="#E0A526" stroke-width="2"/>
+      <text x="808" y="266" class="box-t">Select 6</text>
+      <text x="808" y="288" class="box-s">one per document</text>
+    </g>
+    <!-- shelf feeds search -->
+    <path d="M100 126 V180 Q100 190 110 190 H481 Q481 190 481 200 V236" fill="none" stroke="#63708A" stroke-width="1.5" marker-end="url(#ar)"/>
+    <!-- six passages to writer -->
+    <path d="M869 314 V360" stroke="#E0A526" stroke-width="2.5" marker-end="url(#ar)"/>
+    <text x="852" y="352" class="lab" text-anchor="end">6 passages — all the writer ever sees</text>
+    <!-- Writer -->
+    <text x="0" y="386" class="role">Writer</text>
+    <rect x="100" y="362" width="1000" height="56" fill="#14213D"/>
+    <text x="120" y="386" class="box-t" fill="#fff" style="fill:#fff">Qwen2.5-32B-Instruct · on this machine</text>
+    <text x="120" y="406" class="box-s" style="fill:#CBD2DE">answer with [1] [2] + source URLs</text>
+    <!-- never -->
+    <path d="M236 83 H1060 V358" fill="none" stroke="#CBD2DE" stroke-width="1.5" stroke-dasharray="3 6"/>
+    <text x="700" y="76" class="lab" style="fill:#9AA6BA">never reads the corpus directly</text>
+  </svg>
+  <p class="small">A wrong answer is almost always a retrieval failure — and every claim can be traced back to a page.</p>
+</section>
+
+<!-- 6 · The shelf -->
+<section class="slide">
+  <div class="section-tag">The shelf</div>
+  <h2>What went onto it</h2>
+  <div class="stats">
+    <div class="stat"><div class="n">798</div><div class="l">Q&amp;A pages from mriquestions.com</div></div>
+    <div class="stat"><div class="n">2,261</div><div class="l">linked PDFs, followed and downloaded</div></div>
+    <div class="stat"><div class="n">2,106</div><div class="l">PDFs with usable text</div></div>
+    <div class="stat"><div class="n">50,454</div><div class="l">indexed chunks</div></div>
+  </div>
+  <div class="cols cols-2">
+    <div class="col">
+      <h3>The gap is scanned papers</h3>
+      <p style="font-size:20px">Roughly 155 arrived as images and went through OCR — which silently destroys the subscripts that carry the meaning. B<sub>0</sub> becomes B0, sometimes B0B. Those pages got a separate correction pass.</p>
+    </div>
+    <div class="col">
+      <h3>Why not fine-tune a model on all this?</h3>
+      <p style="font-size:20px">Because then you cannot see where an answer came from. Training text into weights gives fluency and no traceability. Keeping it on a shelf is slower — and every sentence gets a URL behind it.</p>
+    </div>
+  </div>
+</section>
+
+<!-- 7 · Chunking -->
+<section class="slide">
+  <div class="section-tag">Chunking</div>
+  <h2>How you cut a page decides what can be found</h2>
+  <div class="cols cols-3">
+    <div class="gen g1">
+      <div class="k">Generation 1</div>
+      <h3>Flat window</h3>
+      <p>350 words, 60 overlap. Simple, works on any document — and cuts routinely landed between a question and its answer. Navigation and 587 reference lists were indexed as content.</p>
+      <div class="count">74,613 chunks</div>
+    </div>
+    <div class="gen g2">
+      <div class="k">Generation 2</div>
+      <h3>Structure-aware</h3>
+      <p>Cut where the page says a question ends. Figures lifted into metadata. A question stays with its answer; reference tails removed first, then dropped.</p>
+      <div class="count">50,454 chunks</div>
+      <div class="fix">polluted chunks 696 → 72</div>
+    </div>
+    <div class="gen g3">
+      <div class="k">Generation 3</div>
+      <h3>Physics-aware</h3>
+      <p>For papers and books. Never split a math block from its definitions: <span class="eq">TI = T1 · ln 2</span> travels with the lines that say what TI and T1 are. Heading path prefixed; problem sets skipped.</p>
+      <div class="count">~320 words</div>
+    </div>
+  </div>
+  <p class="small" style="margin-top:22px">Each generation fixed a failure the previous one created — and the middle one is where two thirds of the junk left the index.</p>
+</section>
+
+<!-- 8 · The ordering bug -->
+<section class="slide">
+  <div class="section-tag">Chunking · the subtlest bug</div>
+  <h2>The fix was an ordering change, not a code change</h2>
+  <p class="lead">The plan: strip boilerplate, then cut the reference tail off at the <em>References</em> heading.</p>
+  <p class="lead">But <em>References</em> appears on 587 pages — which makes it boilerplate by the stripper's own definition. The stripper deleted the marker before the tail-cutter could find it, so the tails stayed in.</p>
+  <div class="thesis">Cut the tail first, then strip boilerplate.</div>
+  <p class="small">Reference-polluted chunks fell from 696 to 72, and the index went from 74,613 to 50,454 chunks — a third of it was never content.</p>
+</section>
+
+<!-- 9 · Acronyms -->
+<section class="slide">
+  <div class="section-tag">Retrieval · why MRI vocabulary breaks search</div>
+  <h2>The same letters mean different things</h2>
+  <div class="cols cols-2" style="grid-template-columns:1.15fr 1fr;gap:44px">
+    <div>
+      <table>
+        <tr><th>Acronym</th><th>One reading</th><th>The other</th></tr>
+        <tr><td>FA</td><td>flip angle</td><td>fractional anisotropy</td></tr>
+        <tr><td>PD</td><td>proton density</td><td>Parkinson disease</td></tr>
+        <tr><td>SE</td><td>spin echo</td><td>standard error</td></tr>
+        <tr><td>IR</td><td>inversion recovery</td><td>image rejection</td></tr>
+        <tr><td>CS</td><td>compressed sensing</td><td>chemical shift</td></tr>
+        <tr><td>ICA</td><td>internal carotid artery</td><td>independent component analysis</td></tr>
+        <tr><td>DSC</td><td>dynamic susceptibility contrast</td><td>dice similarity coefficient</td></tr>
+        <tr><td>MT</td><td>magnetization transfer</td><td>mean transit</td></tr>
+      </table>
+    </div>
+    <div class="col">
+      <div class="stats" style="grid-template-columns:1fr 1fr;gap:16px;margin-top:0">
+        <div class="stat"><div class="n">2,184</div><div class="l">distinct acronyms mined from the corpus</div></div>
+        <div class="stat gold"><div class="n">246</div><div class="l">with competing expansions inside MRI alone</div></div>
+      </div>
+      <p style="font-size:20px">Guessing wrong does not degrade the answer slightly — it retrieves the wrong literature entirely. A reader asking about FA in diffusion and one asking about FA as a sequence parameter want disjoint sets of pages.</p>
+    </div>
+  </div>
+</section>
+
+<!-- 10 · Three more retrieval problems -->
+<section class="slide">
+  <div class="section-tag">Retrieval · three more ways search fails</div>
+  <h2>Meaning, not word-matching</h2>
+  <div class="cols cols-3">
+    <div class="col">
+      <h3>Same word, different quantity</h3>
+      <p style="font-size:19.5px">"Bandwidth" may be receiver or transmit; "frequency" may be Larmor or an offset. Encoded as a readable table of 14 scenarios keyed on trigger phrases — rules an expert can correct, not weights buried in a model.</p>
+    </div>
+    <div class="col">
+      <h3>No shared words at all</h3>
+      <p style="font-size:19.5px"><em>"Hydrogen resonates at 64 MHz at 1.5 T — what is the frequency at 7 T?"</em> The answering page explains the Larmor equation. "Larmor" appears nowhere in the question. The system must know the concept, not the word.</p>
+    </div>
+    <div class="col">
+      <h3>Long papers crowd out short pages</h3>
+      <p style="font-size:19.5px">A paper matches many queries moderately; a Q&amp;A page matches one exactly. On the questions we got wrong, 34 of 75 top-three slots were papers when a site page was better. Current fix: a hand-set preference for site pages — a tuned constant not yet justified by experiment.</p>
+    </div>
+  </div>
+</section>
+
+<!-- 11 · The writer -->
+<section class="slide">
+  <div class="section-tag">The writer</div>
+  <h2>A language model on a short leash</h2>
+  <div class="cols cols-2" style="grid-template-columns:1fr 1fr;gap:48px">
+    <div class="col">
+      <p style="font-size:20px">Qwen2.5-32B-Instruct, quantised (AWQ) and served locally with vLLM on a single RTX PRO 5000. No question, passage, or answer leaves the machine — for a corpus of copyrighted material, the only defensible choice.</p>
+      <h3 style="margin-top:22px">Its standing instructions</h3>
+      <ol style="font-size:19px">
+        <li>Lead with the answer.</li>
+        <li>Cite inline as [1], [2] against the numbered passages.</li>
+        <li>Give the equation when one is relevant.</li>
+        <li>Correct a false premise before answering it.</li>
+        <li>Mark outside knowledge — established physics may be used, flagged as such, never to invent the meaning of a term.</li>
+      </ol>
+    </div>
+    <div class="col">
+      <h3>The fifth rule was earned</h3>
+      <p style="font-size:20px">A stricter version forbade anything outside the retrieved passages. The model responded by hedging — "the exact value is not specified in the provided context" — on questions it could have answered.</p>
+      <div class="stats" style="grid-template-columns:1fr 1fr;gap:16px;margin:20px 0 12px">
+        <div class="stat"><div class="n">+14.5</div><div class="l">points from permitting established physics</div></div>
+        <div class="stat gold"><div class="n">+29</div><div class="l">points from forcing a committed final answer</div></div>
+      </div>
+      <p class="small">Measured on 55 calculation questions. Refusing to commit was costing more than being wrong.</p>
+    </div>
+  </div>
+</section>
+
+<!-- 12 · The application -->
+<section class="slide">
+  <div class="section-tag">The application</div>
+  <h2>What a user actually sees</h2>
+  <div class="cols cols-2" style="gap:48px">
+    <div class="col">
+      <p style="font-size:20px">A locally served chat interface. The answer streams back with equations typeset and every claim marked with its passage. Below it: the source list — title, site or paper, retrieval score, and a live link.</p>
+      <h3 style="margin-top:22px">Three details that matter</h3>
+      <ul style="font-size:19px">
+        <li><strong>Sources are shown, not summarised.</strong> An answer whose citation does not support it is visibly wrong — the entire safety argument.</li>
+        <li><strong>Follow-ups refine rather than restart.</strong> "Shorter" or "just the equation" edits the previous answer instead of re-searching.</li>
+        <li><strong>Every answer can be rated,</strong> stored with the question, the answer, and the exact passages retrieved.</li>
+      </ul>
+    </div>
+    <div class="col">
+      <h3>The feedback loop is the point</h3>
+      <p style="font-size:20px">A thumbs-down is a labelled retrieval failure: what was asked and what the librarian brought back — precisely the diagnostic pair. A review tool groups negatives by topic to show where the shelf is thin.</p>
+      <div class="thesis" style="font-size:22px;margin:22px 0 14px">Question → rating → the gap it reveals → new documents → re-index</div>
+      <p class="small">The only mechanism that improves the system from use rather than an engineer's guess. So far almost entirely unused — one rating exists.</p>
+    </div>
+  </div>
+</section>
+
+<!-- 13 · Two gaps -->
+<section class="slide">
+  <div class="section-tag">Two gaps only a person can close</div>
+  <h2>Where the machine runs out</h2>
+  <p style="font-size:20px;max-width:1000px">Both remaining gaps have the same shape: a question about MRI that no computation answers, because the answer is a matter of domain fact. Review pages for all four are built and waiting — click a verdict per item, export a file.</p>
+  <div class="stats" style="margin-top:26px">
+    <div class="stat gold"><div class="n">20</div><div class="l">relevance grades to confirm first. An automatic judge called 40% of candidates relevant; twenty blind judgements settle whether that inflated the headline score. Half an hour.</div></div>
+    <div class="stat"><div class="n">105</div><div class="l">held-out test questions to validate; 27 flagged as suspect. These decide whether any future change counts as real.</div></div>
+    <div class="stat"><div class="n">~130</div><div class="l">ambiguous acronyms to settle — the ones where the default changes which literature is retrieved.</div></div>
+    <div class="stat"><div class="n">55</div><div class="l">calculation answers to check, including one reproducible error: SNR treated as ∝ √(voxel volume) when it is linear.</div></div>
+  </div>
+</section>
+
+<!-- 14 · How we know -->
+<section class="slide">
+  <div class="section-tag">Evaluation</div>
+  <h2>The hardest part was not building it</h2>
+  <div class="cols cols-2" style="gap:48px">
+    <div class="col">
+      <h3>Two independent measures</h3>
+      <p style="font-size:20px"><strong>Did the librarian find the right page?</strong> Scored against questions where the site's own author linked the answer.</p>
+      <p style="font-size:20px"><strong>Does the writer agree with the expert?</strong> 735 question–answer pairs, split into train, development, and held-out test.</p>
+    </div>
+    <div class="col">
+      <h3>Every comparison runs through a resampling test</h3>
+      <p style="font-size:20px">Shuffle the data twenty thousand times and ask whether an improvement this large could be luck. This threw out three changes that felt like clear wins — including a hybrid keyword-plus-semantic search that looked convincingly better and was noise.</p>
+    </div>
+  </div>
+  <div class="thesis" style="font-size:24px;margin-top:30px">Building the pipeline took a fraction of the effort. Establishing whether any change was an improvement took the rest.</div>
+</section>
+
+<!-- 15 · Where it stands -->
+<section class="slide">
+  <div class="section-tag">Evaluation · held-out test</div>
+  <h2>Where it stands</h2>
+  <div class="stats">
+    <div class="stat gold"><div class="n">73.8</div><div class="l">mean agreement with expert answers</div></div>
+    <div class="stat"><div class="n">80.6%</div><div class="l">answers scoring ≥ 70</div></div>
+    <div class="stat"><div class="n">2.4%</div><div class="l">answers with no citation</div></div>
+    <div class="stat"><div class="n">6.8%</div><div class="l">answers containing a contradiction</div></div>
+  </div>
+  <h3>Known weaknesses, stated plainly</h3>
+  <ul style="font-size:19.5px;max-width:1000px">
+    <li>The system cannot say "I don't know." Unanswerable questions still get an answer; abstention is unbuilt.</li>
+    <li>The automatic grader agrees with itself only about two thirds of the time, so small measured differences cannot be trusted.</li>
+    <li>Retrieval confidence predicts nothing — low-scoring retrievals are as often correct as high-scoring ones.</li>
+    <li>One question harvester is still broken: it glues multiple-choice options onto stems and destroys subscripts.</li>
+  </ul>
+</section>
+
+<!-- 16 · The ruler -->
+<section class="slide">
+  <div class="section-tag">Evaluation · the correction worth showing</div>
+  <h2>Nothing about the system changed. The ruler changed.</h2>
+  <div class="ruler">
+    <div class="box"><div class="n">0.709</div><div class="l">hit@5 — must find the one document the answer key credits</div></div>
+    <div class="box win"><div class="n">0.976</div><div class="l">hit@5 — find any page judged relevant</div></div>
+  </div>
+  <p style="font-size:20px;max-width:1000px">Judging a pooled set of 1,776 question–document pairs showed a median of <strong>eight</strong> genuinely relevant pages per question. That reframes eleven experiments with no improvement: not "we keep failing to find the trick" but "there was very little left to find."</p>
+  <p class="small" style="margin-top:14px">Every headline number has moved when measured more carefully — always toward less than claimed. A result saying everything is nearly perfect deserves more suspicion, not less. Twenty expert judgements decide whether it survives.</p>
+</section>
+
+<!-- 17 · What happens next -->
+<section class="slide">
+  <div class="section-tag">What happens next</div>
+  <h2>In order</h2>
+  <ol class="steps" style="max-width:1000px;font-size:20px">
+    <li><div><strong>Twenty relevance judgements from a physicist.</strong> Everything else waits behind this — it determines whether the retrieval work so far was warranted or we have been reading a bent ruler.</div></li>
+    <li><div><strong>Validate the test questions and the acronym defaults.</strong> Until these exist, further experiments only produce numbers nobody should act on.</div></li>
+    <li><div><strong>Put the app in front of real users and collect ratings.</strong> Fifty disappointed answers would tell us more about where the shelf is thin than any offline metric.</div></li>
+    <li><div><strong>Teach the system to decline.</strong> An honest "the corpus does not cover this" is worth more in clinical physics than a confident paragraph.</div></li>
+    <li><div><strong>Grow the shelf one source at a time, measuring after each</strong> — so that when something improves, we know what did it.</div></li>
+  </ol>
+</section>
+
+<!-- Looking further ahead -->
+<section class="slide">
+  <div class="section-tag">Looking further ahead</div>
+  <h2>Next: a conversation that reasons</h2>
+  <div class="cols cols-2" style="gap:48px">
+    <div class="col">
+      <h3>Today</h3>
+      <p style="font-size:20px">One question in, one cited answer out. Follow-ups such as "shorter" edit the previous answer, but the system does not carry a line of reasoning from turn to turn.</p>
+      <h3 style="margin-top:22px">Planned</h3>
+      <p style="font-size:20px">A reasoning ("chain-of-thought") model as the writer: it works through the problem step by step — identifying the relevant physics, choosing the equation, checking units — before committing to an answer, and it can hold a multi-turn conversation in which the user questions, corrects, and refines.</p>
+    </div>
+    <div class="col">
+      <h3>What does not change</h3>
+      <ul style="font-size:19px;max-width:none">
+        <li>The librarian still decides what the writer sees; reasoning happens over retrieved passages, not over memory.</li>
+        <li>Every step and every claim stays traceable to a page the user can open.</li>
+        <li>Everything runs locally — the conversation never leaves the workstation.</li>
+      </ul>
+      <div class="thesis" style="font-size:22px;margin-top:22px">A model that can show its working is easier to catch when it is wrong — which, in clinical physics, is the whole point.</div>
+    </div>
+  </div>
+</section>
+
+
+<!-- 18 · Sources & details -->
+<section class="slide">
+  <div class="section-tag">Sources, licensing, and technical details</div>
+  <h2>References</h2>
+  <div class="src">
+    <dl>
+      <dt>Corpus</dt>
+      <dd>Elster, A. D. <em>Questions and Answers in MRI</em>, <a href="https://mriquestions.com">mriquestions.com</a> — 798 Q&amp;A pages, plus the 2,261 papers linked from the site (2,106 with usable text after OCR).</dd>
+      <dt>Licensing</dt>
+      <dd>All corpus material is third-party copyrighted content held for personal, offline use. The system runs entirely on local hardware; no content is redistributed. This presentation reports aggregate statistics and method only.</dd>
+      <dt>Embeddings &amp; search</dt>
+      <dd>BGE-large-en-v1.5 (1024-d) · FAISS cosine similarity · SQLite FTS5 · bge-reranker-base cross-encoder</dd>
+      <dt>Generation</dt>
+      <dd>Qwen2.5-32B-Instruct-AWQ served with vLLM · FastAPI backend · single RTX PRO 5000 workstation GPU</dd>
+      <dt>Evaluation</dt>
+      <dd>735 expert Q&amp;A pairs (train / dev / held-out test) · 1,776 pooled question–document relevance judgements · 20,000-shuffle permutation tests for every comparison</dd>
+      <dt>Contact</dt>
+      <dd>Sudhir K Pathak · Learning Research and Development Center, University of Pittsburgh</dd>
+    </dl>
+  </div>
+</section>
+
+  <div class="foot"><span>PhysAssist · Sudhir K Pathak · University of Pittsburgh &nbsp;<span class="hint" id="opt-hint"></span></span>
+    <span class="nav"><span id="opt" role="button" tabindex="0" title="Toggle optional slides (O)"></span><span id="counter"></span><button id="prev" aria-label="Previous slide">‹ Prev</button><button id="next" aria-label="Next slide">Next ›</button></span></div>
+  <div id="progress"></div>
+</div>
+
+<script>
+(function(){
+  const all=[...document.querySelectorAll('.slide')];
+  const counter=document.getElementById('counter');
+  const progress=document.getElementById('progress');
+  const optBtn=document.getElementById('opt');
+  let showOptional=!/optional=off/.test(location.search);
+  let slides=[];
+  let cur=all[0];
+
+  function rebuild(){
+    slides=showOptional?all:all.filter(s=>!s.classList.contains('optional'));
+    optBtn.textContent='Optional slides: '+(showOptional?'on':'off')+' (O)';
+    if(!slides.includes(cur))cur=slides[Math.max(0,slides.findIndex(s=>all.indexOf(s)>all.indexOf(cur))) ]||slides[0];
+    show(slides.indexOf(cur));
+  }
+  function show(n){
+    const i=Math.max(0,Math.min(slides.length-1,n));
+    cur=slides[i];
+    all.forEach(s=>s.classList.toggle('active',s===cur));
+    counter.textContent=(i+1)+' / '+slides.length;
+    progress.style.width=((i+1)/slides.length*100)+'%';
+    try{history.replaceState(null,'','#'+(i+1));}catch(err){location.replace('#'+(i+1));}
+  }
+  const idx=()=>slides.indexOf(cur);
+  function fit(){
+    const s=Math.min(innerWidth/1280,innerHeight/720);
+    document.getElementById('stage').style.setProperty('--s',s);
+  }
+  addEventListener('resize',fit);fit();
+  document.getElementById('next').onclick=()=>show(idx()+1);
+  document.getElementById('prev').onclick=()=>show(idx()-1);
+  optBtn.onclick=()=>{showOptional=!showOptional;rebuild();};
+  addEventListener('keydown',e=>{
+    if(['ArrowRight','ArrowDown','PageDown',' '].includes(e.key)){e.preventDefault();show(idx()+1);}
+    else if(['ArrowLeft','ArrowUp','PageUp'].includes(e.key)){e.preventDefault();show(idx()-1);}
+    else if(e.key==='Home')show(0);else if(e.key==='End')show(slides.length-1);
+    else if(e.key==='o'||e.key==='O'){showOptional=!showOptional;rebuild();}
+    else if(e.key==='f'||e.key==='F'){
+      const p=document.fullscreenElement?document.exitFullscreen():document.documentElement.requestFullscreen();
+      if(p&&p.catch)p.catch(()=>{});
+    }
+  });
+  document.getElementById('stage').addEventListener('click',e=>{
+    if(e.target.closest('button,a,#opt'))return;
+    const r=e.currentTarget.getBoundingClientRect();
+    show((e.clientX-r.left)/r.width>0.3?idx()+1:idx()-1);
+  });
+  // Free-induction-decay curve on the title slide: e^(-t/T2*) · sin(ωt)
+  const pts=[];
+  for(let x=60;x<=1220;x+=2){
+    const t=(x-60)/1160;
+    const y=150-110*Math.exp(-t*3.2)*Math.sin(t*2*Math.PI*11);
+    pts.push((x===60?'M':'L')+x.toFixed(1)+' '+y.toFixed(1));
+  }
+  document.getElementById('fidpath').setAttribute('d',pts.join(' '));
+  rebuild();
+  const start=parseInt(location.hash.slice(1),10);
+  if(start>1)show(start-1);
+})();
+</script>
+</body>
+</html>

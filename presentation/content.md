@@ -13,3 +13,4 @@ Files without a note still show up; they just won't have a description.
 - HM-MRI_Identifiability.html — HM-MRI identifiability analysis and results.
 - qsm_modeling.html - Quantitative Susceptibility Mapping — From Phase to χ
 - phantom_explorer.html — Phantom Semantics Console (PST-102228) — interactive phantom explorer.
+- PhysAssist.html — PhysAssist: a retrieval-augmented "librarian" for MRI physics over mriquestions.com and 2,261 linked papers, run locally on Qwen2.5-32B. Slides: arrow keys to navigate, **O** toggles the optional how-RAG-works section, **F** for fullscreen.
