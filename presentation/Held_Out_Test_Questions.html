@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Held-Out Test Questions</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Serif:ital,wght@0,400;0,600;0,700;1,400&display=swap">
+<style>
+  :root{color-scheme:light dark}
+  body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif}
+  img{max-width:100%}
+  [hidden]{display:none!important}
+</style>
+</head>
+<body>
+<style id="css">
+:root{--ground:#FBFCFD;--surface:#F1F4F7;--surface-2:#E8EDF2;--ink:#12181D;--ink-2:#3D4A56;
+--ink-3:#6B7885;--rule:#DBE2E8;--rule-2:#C3CDD6;--accent:#0B6E8C;--accent-soft:#E1EFF4;
+--neg:#A6412F;--neg-soft:#F6E7E3;--pos:#2F6B4F;--pos-soft:#E4EFE9;--warn:#8A6414;
+--warn-soft:#F6EEDC;--serif:"IBM Plex Serif",Georgia,serif;
+--sans:"IBM Plex Sans",system-ui,-apple-system,sans-serif;
+--mono:"IBM Plex Mono",ui-monospace,Menlo,monospace}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--ground:#0D1116;--surface:#161C23;
+--surface-2:#1E262F;--ink:#E6EBF0;--ink-2:#B3BEC9;--ink-3:#7F8C99;--rule:#26303A;--rule-2:#354350;
+--accent:#4FB6D4;--accent-soft:#12303B;--neg:#E38070;--neg-soft:#331A15;--pos:#7CC3A0;
+--pos-soft:#132920;--warn:#D6AC5B;--warn-soft:#2C2312}}
+:root[data-theme="dark"]{--ground:#0D1116;--surface:#161C23;--surface-2:#1E262F;--ink:#E6EBF0;
+--ink-2:#B3BEC9;--ink-3:#7F8C99;--rule:#26303A;--rule-2:#354350;--accent:#4FB6D4;
+--accent-soft:#12303B;--neg:#E38070;--neg-soft:#331A15;--pos:#7CC3A0;--pos-soft:#132920;
+--warn:#D6AC5B;--warn-soft:#2C2312}
+*{box-sizing:border-box}
+body{background:var(--ground);color:var(--ink);font-family:var(--sans);font-size:16px;
+line-height:1.55;margin:0;-webkit-font-smoothing:antialiased;font-variant-numeric:tabular-nums}
+.wrap{max-width:1000px;margin:0 auto;padding:0 24px 100px}
+header.top{padding:60px 0 30px;border-bottom:2px solid var(--ink)}
+.eyebrow{font-family:var(--mono);font-size:11px;letter-spacing:.16em;text-transform:uppercase;
+color:var(--accent);font-weight:600;margin:0 0 16px}
+h1{font-family:var(--serif);font-weight:700;font-size:clamp(2.1rem,5vw,3.2rem);line-height:1.05;
+letter-spacing:-.02em;margin:0 0 16px;text-wrap:balance}
+.standfirst{font-family:var(--serif);font-size:1.1rem;line-height:1.5;color:var(--ink-2);
+max-width:60ch;margin:0 0 8px}
+.status{margin:22px 0 0;padding:13px 16px;border:1px solid var(--rule);border-radius:4px;
+background:var(--surface);font-family:var(--mono);font-size:12.5px;color:var(--ink-3)}
+.status b{color:var(--ink-2);font-weight:500}
+.status.ok{border-left:3px solid var(--pos)}
+.status.ro{border-left:3px solid var(--warn);background:var(--warn-soft)}
+.bar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;position:sticky;top:0;z-index:20;
+background:var(--ground);border-bottom:1px solid var(--rule);padding:14px 0;margin-bottom:8px}
+.tab{font-family:var(--mono);font-size:12px;letter-spacing:.04em;padding:7px 14px;border-radius:3px;
+border:1px solid var(--rule-2);background:var(--surface);color:var(--ink-2);cursor:pointer;
+font-weight:500}
+.tab[aria-selected="true"]{background:var(--accent);border-color:var(--accent);color:#fff}
+.tab:hover{border-color:var(--accent)}
+.prog{margin-left:auto;font-family:var(--mono);font-size:12px;color:var(--ink-3);
+display:flex;gap:14px;align-items:center}
+.tab.exp{border-color:var(--accent);color:var(--accent);background:var(--accent-soft)}
+.who{font-family:var(--mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase;
+color:var(--ink-3);font-weight:600;padding:7px 0 7px 2px}
+.who b{color:var(--accent);font-weight:600;letter-spacing:.04em;text-transform:none;
+font-size:12.5px}
+.expanel{border:1px solid var(--accent);border-radius:4px;background:var(--surface);
+padding:15px 17px;margin:0 0 14px}
+.expanel h3{font-family:var(--sans);font-size:14px;font-weight:600;margin:0 0 6px;color:var(--ink)}
+.expanel p{font-size:13px;color:var(--ink-2);margin:0 0 10px;max-width:70ch}
+.expanel textarea{width:100%;height:150px;font-family:var(--mono);font-size:11px;line-height:1.45;
+padding:9px 11px;border:1px solid var(--rule-2);border-radius:3px;background:var(--ground);
+color:var(--ink);resize:vertical}
+.pbar{width:120px;height:6px;background:var(--surface-2);border-radius:3px;overflow:hidden}
+.pfill{height:100%;background:var(--accent);width:0%;transition:width .25s}
+section h2{font-family:var(--serif);font-size:1.5rem;margin:34px 0 6px;letter-spacing:-.01em}
+section .sub{color:var(--ink-3);font-size:14px;max-width:66ch;margin:0 0 20px}
+.grp{font-family:var(--mono);font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;
+color:var(--ink-3);font-weight:600;margin:30px 0 10px;padding-bottom:7px;
+border-bottom:1px solid var(--rule)}
+.item{border:1px solid var(--rule);border-radius:4px;background:var(--surface);padding:15px 17px;
+margin-bottom:9px;display:grid;grid-template-columns:1fr auto;gap:14px;align-items:start}
+.item.done{background:var(--ground)}
+.item.flag{border-left:3px solid var(--neg)}
+.item.okd{border-left:3px solid var(--pos)}
+.item.fix{border-left:3px solid var(--warn)}
+@media(max-width:700px){.item{grid-template-columns:1fr}}
+.acr{font-family:var(--mono);font-size:1.15rem;font-weight:600;color:var(--accent);margin-bottom:5px}
+.sense{font-size:15px;color:var(--ink);margin-bottom:3px}
+.sense .lbl,.alt .lbl{font-family:var(--mono);font-size:10px;letter-spacing:.1em;
+text-transform:uppercase;margin-right:8px}
+.sense .lbl{color:var(--ink-3)}
+.alt{font-size:14px;color:var(--ink-2)}
+.alt .lbl{color:var(--neg)}
+.freq{font-family:var(--mono);font-size:11.5px;color:var(--ink-3);margin-top:7px}
+.q{font-size:15px;color:var(--ink);line-height:1.5;margin-bottom:9px;max-width:70ch}
+.qt{font-family:var(--serif);font-size:1.05rem;color:var(--ink);margin-bottom:7px;font-weight:600}
+.ansline{display:flex;flex-wrap:wrap;gap:8px 20px;align-items:baseline;font-family:var(--mono);
+font-size:13px}
+.ansline .val{color:var(--pos);font-weight:600;font-size:14.5px}
+.ansline .rel{color:var(--ink-3);font-size:12px}
+.cat{display:inline-block;font-family:var(--mono);font-size:9.5px;letter-spacing:.09em;
+text-transform:uppercase;padding:2px 7px;border-radius:3px;background:var(--surface-2);
+color:var(--ink-3);font-weight:600;margin-bottom:7px}
+.acts{display:flex;flex-direction:column;gap:6px;min-width:140px}
+@media(max-width:700px){.acts{flex-direction:row;flex-wrap:wrap;min-width:0}}
+button.v{font-family:var(--mono);font-size:11px;letter-spacing:.05em;padding:7px 11px;
+border-radius:3px;border:1px solid var(--rule-2);background:var(--ground);color:var(--ink-2);
+cursor:pointer;text-align:left;font-weight:500;white-space:nowrap}
+button.v:hover{border-color:var(--accent);color:var(--accent)}
+button.v[aria-pressed="true"]{font-weight:600}
+button.v.ok[aria-pressed="true"]{background:var(--pos-soft);border-color:var(--pos);color:var(--pos)}
+button.v.no[aria-pressed="true"]{background:var(--neg-soft);border-color:var(--neg);color:var(--neg)}
+button.v.fx[aria-pressed="true"]{background:var(--warn-soft);border-color:var(--warn);color:var(--warn)}
+textarea.note{grid-column:1/-1;width:100%;font-family:var(--sans);font-size:13.5px;padding:9px 11px;
+border:1px solid var(--rule-2);border-radius:3px;background:var(--ground);color:var(--ink);
+resize:vertical;min-height:38px;margin-top:2px}
+textarea.note:focus{outline:2px solid var(--accent);outline-offset:1px}
+footer{margin-top:60px;padding-top:30px;border-top:2px solid var(--ink)}
+footer p{font-size:13px;color:var(--ink-3);max-width:66ch}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+@media(prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+<script id="shell" type="text/template"><header class="top">
+  <p class="eyebrow">MRI question-answering &middot; expert review<\/p>
+  <h1>Held-Out Test Questions<\/h1>
+  <p class="standfirst">The measuring stick. These 105 questions never touch training and decide
+  whether any future change to the system counts as an improvement — so a flawed question here
+  quietly corrupts every result that follows.<\/p>
+  <div class="status" id="sbar"><\/div>
+<\/header>
+<div id="root"><\/div>
+<footer>
+  <p>Questions were written for this evaluation and are not reproduced from any source. Topic
+  titles reference pages on mriquestions.com, which is third-party copyrighted and held for
+  personal, offline use. No source text appears on this page.<\/p>
+<\/footer></script>
+<div class="wrap" id="mount"></div>
+<script id="state" type="application/json">{"version": 1, "key": "mriq-questions-review", "expert": "", "title": "Held-Out Test Questions", "sections": [{"id": "cal", "title": "Calibration", "heading": "Is the machine grading too generous?", "sub": "<strong>This is the most valuable half-hour on the whole project.<\/strong> An automatic pass re-graded 1,776 (question, document) pairs and concluded the retrieval system finds a relevant page <strong>97.6%<\/strong> of the time &mdash; against 70.9% under the old answer key. That 27-point correction rests entirely on whether the machine's idea of &ldquo;a right page to consult&rdquo; matches yours. It called roughly 40% of candidates relevant, which may be too lenient.<br><br>Twenty judgements below, spread across the grades. For each: was the grade right, too generous, or too harsh? If several of the grade-2 items are really only supporting material, the 97.6% is inflated and a good deal of what we concluded today is wrong.", "groups": [{"label": "", "items": [{"id": "cal-00", "kind": "cal", "q": "A steel wrench is inadvertently brought into the room housing a self-shielded 1.5 T scanner. Which statement is true about the magnetic torque on the wrench?", "doc": "uploads/3/4/5/7/34572113/cardiac_safety_expert_consensuspiis1547527117304538.pdf", "g": 1, "snip": "2017 HRS expert consensus statement on magnetic resonance imaging and radiation exposure in patients with cardiovascular implantable electronic devices Julia H. Indik, MD, PhD, FHRS, FACC, FAHA (Chair),1 J. Rod Gimbel, MD (Vice-Chair),2 Haruhiko Abe, MD,3,* Ricardo Alkmim-Teixeira, MD, PhD,4,\u2021 Ulrika Birgersdotter-Green, MD, FHRS,5 Geoffrey D. Clarke, PhD, FACR, FAAPM,6,x Timm-Michael L. Dickfeld, MD, PhD,7 Jerry W. Froelich, MD, FACR,8,{ Jonathan Grant, MD,9,# David L. Hayes, MD, FHRS,10 Hein Heidbuchel,", "v": null, "note": ""}, {"id": "cal-01", "kind": "cal", "q": "Concerning diamagnetism, which statement is false?", "doc": "uploads/3/4/5/7/34572113/gan_rg.2021200151.pdf", "g": -1, "snip": "INFORMATICS 840 Generative Adversarial Networks: A Primer for Radiologists Artificial intelligence techniques involving the use of artificial neural networks\u2014that is, deep learning techniques\u2014are expected to have a major effect on radiology. Some of the most exciting applications of deep learning in radiology make use of generative adversarial networks (GANs). GANs consist of two artificial neural networks that are jointly optimized but with opposing goals. One neural network, the generator, aims", "v": null, "note": ""}, {"id": "cal-02", "kind": "cal", "q": "Which of the following statements about MultiBand/Simultaneous Multi-Slice imaging is false?", "doc": "uploads/3/4/5/7/34572113/fingerprint_mehta_et_al-2019-magnetic_resonance_in_medicine.pdf", "g": 2, "snip": "Magn Reson Med\ufeff. 2019;81:25\u201346. wileyonlinelibrary.com/journal/mrm \u00a9 2018 International Society for Magnetic Resonance in Medicine | 25 Received: 9 August 2017 | Revised: 1 May 2018 | Accepted: 21 May 2018 DOI: 10.1002/mrm.27403 R E V I E W Magnetic resonance fingerprinting: a technical review Bhairav Bipin Mehta1,* | Simone Coppo1,* | Debra Frances McGivney1 | Jesse Ian Hamilton2 | Yong Chen1 | Yun Jiang1 | Dan Ma1 | Nicole Seiberlich2", "v": null, "note": ""}, {"id": "cal-03", "kind": "cal", "q": "Concerning diamagnetism, which statement is false?", "doc": "uploads/3/4/5/7/34572113/depolarization_tensor_method_2nd_edition.pdf", "g": 0, "snip": "Carlos E. Soliv\u00e9rez ii The the cover was drawn using the Wolfram Demonstrations Project Ellipsoid by Jeff Bryant. ELECTROSTATICS AND MAGNETOSTATICS OF POLARIZED ELLIPSOIDAL BODIES: THE DEPOLARIZATION TENSOR METHOD Carlos E. Soliv\u00e9rez Carlos E. Soliv\u00e9rez ii This work is the English translation by the author of the first edition of his book in Spanish, Propiedades electrost\u00e1ticas y magnetost\u00e1ticas de cuerpos elipsoidales: formalismo del tensor depolarizaci\u00f3n. In the process of translation", "v": null, "note": ""}, {"id": "cal-04", "kind": "cal", "q": "When a metal object becomes magnetically saturated by an external field (B), which of the following is false?", "doc": "what-is-a-tesla", "g": 2, "snip": "| ## Tesla DefinedWe have a 3.0 tesla MR scanner at our hospital. I know this is a very strong magnet, but what exactly is a tesla? | ![Tesla definition, magnetic field strength](uploads/3/4/5/7/34572113/published/829446.png%3F1598372855) | | ![magnetic field, Tesla](uploads/3/4/5/7/34572113/editor/screenshot-2026-01-22-at-8-27-14-am.png%3F1769093668) | Consider a hypothetical wire stretched across the bore of an MR scanner whose magnetic field Bis shown in the picture. When a current is passed along this wire, a magnetically generated", "v": null, "note": ""}, {"id": "cal-05", "kind": "cal", "q": "Concerning SWI phase map images, which statement is incorrect?", "doc": "uploads/3/4/5/7/34572113/liu_et_al-2015-journal_of_magnetic_resonance_imaging.pdf", "g": 2, "snip": "Review Article Susceptibility-Weighted Imaging and Quantitative Susceptibility Mapping in the Brain Chunlei Liu, PhD,1,2* Wei Li, PhD,3,4 Karen A. Tong, MD,5 Kristen W. Yeom, MD,6 and Samuel Kuzminski, MD2 Susceptibility-weighted imaging (SWI) is a magnetic reso- nance imaging (MRI) technique that enhances image con- trast by using the susceptibility differences between tissues. It is created by combining both magnitude and phase in the gradient echo data. SWI is sensitive to", "v": null, "note": ""}, {"id": "cal-06", "kind": "cal", "q": "In which of the following situations is center frequency adjustment most critical?", "doc": "routine-quality-control", "g": 2, "snip": "| ## Quality ControlWhat types of routine quality control must be performed on an MR scanner? | ![MR quality control schedule](uploads/3/4/5/7/34572113/screen-shot-2020-07-19-at-2-21-02-pm_orig.png) | Continuous Most routine QC tests are performed by an MR technologist. More detailed equipment performance evaluations are performed periodically by a qualified medical physicist, MR scientist, qualified expert, or service engineer. For ACR-accredited MRI units, a continuous QC program must be implemented, and technologist QC testing is required", "v": null, "note": ""}, {"id": "cal-07", "kind": "cal", "q": "Which of the following \u00b9H-containing molecules account for nearly 100% of the signal recorded within the brain parenchyma using routine MRI sequences?", "doc": "uploads/3/4/5/7/34572113/naa_-whole_paper_ihms19724.pdf", "g": 0, "snip": "N-Acetylaspartate in the CNS: From Neurodiagnostics to Neurobiology John R. Moffett1,2, Brian Ross3, Peethambaran Arun1, Chikkathur N. Madhavarao1, and M. A. A. Namboodiri1 1 Department of Anatomy, Physiology and Genetics, Uniformed Services University of the Health Sciences, Building C, 4301 Jones Bridge Rd., Bethesda, MD 20814, USA 3 Magnetic Resonance Unit, Huntington Medical Research Institutes, Pasadena, CA; Rudi Schulte Research Institute, Santa Barbara CA and NARSAD Abstract The brain is", "v": null, "note": ""}, {"id": "cal-08", "kind": "cal", "q": "Concerning magnetophosphenes, which statement is false?", "doc": "uploads/3/4/5/7/34572113/acr_manual_on_mr_safety__2000_.pdf", "g": 2, "snip": "0 ACR Manual on MR Safety 2020 ACR COMMITTEE ON MR SAFETY AMERICAN COLLEGE OF RADIOLOGY | 1891 Preston White Drive, Reston, VA 20191 1 ACR Manual on MR Safety Version 1.0 2020 ACR Committee on MR Safety 2 CONTENTS ACKNOWLEDGMENTS .............................................................................................................. 3 Preface............................................................................................................................................. 4 Revisions ......................................................................................................................................... 5 Introduction ..................................................................................................................................... 6 Establishing, Implementing, and Maintaining Current MR Safety Policies and Procedures ......... 7 MR Personnel.................................................................................................................................. 7 MR Screening ................................................................................................................................. 9", "v": null, "note": ""}, {"id": "cal-09", "kind": "cal", "q": "Which of the following statements about the Quiescent-Interval Single-Shot (QISS) MRA is incorrect?", "doc": "uploads/3/4/5/7/34572113/parallel_imaging_review1-s2.0-s0079656517300031-main.pdf", "g": 1, "snip": "Recent advances in parallel imaging for MRI Jesse Hamilton a,\u21d1, Dominique Franson a, Nicole Seiberlich a,b a Biomedical Engineering, Case Western Reserve University, Cleveland, OH, USA b Radiology, University Hospitals Cleveland Medical Center, Cleveland, OH, USA Edited by David Gadian and David Neuhaus a r t i c l e i n f o Article history: Received 30 January 2017 Accepted 17 April 2017 Available online 2 May 2017 Keywords:", "v": null, "note": ""}, {"id": "cal-10", "kind": "cal", "q": "What is the main reason b-SSFP MRA sequences are not routinely used in intracranial imaging?", "doc": "uploads/3/4/5/7/34572113/scheffler_ssfp.pdf", "g": 1, "snip": "Received: 13 February 2003 Accepted: 28 April 2003 Published online: 20 August 2003 \u00a9 Springer-Verlag 2003 Abstract During the past 5 years balanced steady-state free precession (SSFP) has become increasingly im- portant for diagnostic and functional imaging. Balanced SSFP is charac- terized by two unique features: it of- fers a very high signal-to noise ratio and a T2/T1-weighted image con- trast. This article focuses on the physical principles, on the", "v": null, "note": ""}, {"id": "cal-11", "kind": "cal", "q": "Concerning SWI phase map images, which statement is incorrect?", "doc": "uploads/3/4/5/7/34572113/tong_susc_ajnr.pdf", "g": 2, "snip": "REVIEW ARTICLE Susceptibility-Weighted MR Imaging: A Review of Clinical Applications in Children K.A. Tong S. Ashwal A. Obenaus J.P. Nickerson D. Kido E.M. Haacke SUMMARY: Susceptibility-weighted imaging (SWI) is a high-spatial-resolution 3D gradient-echo MR imaging technique with phase postprocessing that accentuates the paramagnetic properties of blood products such as deoxyhemoglobin, intracellular methemoglobin, and hemosiderin. It is particularly useful for detecting intravascular venous deoxygenated blood as well as extravascular blood products.", "v": null, "note": ""}, {"id": "cal-12", "kind": "cal", "q": "Which of the following statements about the GRASE (Gradient and Spin Echo) pulse sequence is true?", "doc": "uploads/3/4/5/7/34572113/us7068032_gain_adjust_ge.pdf", "g": 2, "snip": "US007068032B2 (12) United States Patent Agilandam et a]. US 7,068,032 B2 Jun. 27, 2006 (10) Patent N0.: (45) Date of Patent: (54) (75) (73) (*) (21) (22) (65) (30) Jul. (51) (52) (58) GAIN ADJUSTMENT METHOD AND MAGNETIC RESONANCE IMAGING APPARATUS Inventors: Kasi VisWanathan Agilandam, Bangalore (IN); Anasuya Mohan Rao, Bangalore (IN) Assignee: GE Medical Systems Global Technology Company, LLC, Waukesha, WI (US) Notice: Subject to any disclaimer, the term", "v": null, "note": ""}, {"id": "cal-13", "kind": "cal", "q": "Which of the following statements about contrast-enhanced (CE)-MRA is false?", "doc": "uploads/3/4/5/7/34572113/mra_physical_principles_review_jmri.pdf", "g": 1, "snip": "Review: MR Physics for Clinicians Non-Contrast Enhanced MR Angiography: Physical Principles Andrew J. Wheaton, PhD and Mitsue Miyazaki, PhD* Toshiba Medical Research Institute, Vernon Hills, Illinois, USA. *Address reprint requests to: M.M., Toshiba Medical Research Institute, 706 N. Deerpath Dr., Vernon Hills, IL 60061. E-mail: mmiyazaki@tmriusa.com Received July 14, 2011; Accepted February 15, 2012. DOI 10.1002/jmri.23641 View this article online at wileyonlinelibrary.com. This article is accredited as a journal-based CME", "v": null, "note": ""}, {"id": "cal-14", "kind": "cal", "q": "Where is the master computer located that controls the MR scanner and processes data into images?", "doc": "uploads/3/4/5/7/34572113/gan_rg.2021200151.pdf", "g": -1, "snip": "INFORMATICS 840 Generative Adversarial Networks: A Primer for Radiologists Artificial intelligence techniques involving the use of artificial neural networks\u2014that is, deep learning techniques\u2014are expected to have a major effect on radiology. Some of the most exciting applications of deep learning in radiology make use of generative adversarial networks (GANs). GANs consist of two artificial neural networks that are jointly optimized but with opposing goals. One neural network, the generator, aims", "v": null, "note": ""}, {"id": "cal-15", "kind": "cal", "q": "What is the approximate in-plane pixel dimensions of a 25 x 25 cm FOV image acquired using 192 phase-encoding steps and 512 samples in the frequency direction - 1.3 x 0.5 mm", "doc": "2dft-reconstruction", "g": 1, "snip": "| ## 2D Fourier TransformI think I see how to calculate pixel values in your simple examples, but how do you do this in a real image with thousands of pixels? | ![2D Fourier Transform](uploads/3/4/5/7/34572113/9583828_orig.png) | A real image is much more complex than the six-pixel example, but the general principles remain the same. Several minor differences are immediately apparent, however. - In MR imaging we typically use at least", "v": null, "note": ""}, {"id": "cal-16", "kind": "cal", "q": "Where is the master computer located that controls the MR scanner and processes data into images?", "doc": "uploads/3/4/5/7/34572113/maclaren_prospective_motion_correction.pdf", "g": 0, "snip": "IMAGING METHODOLOGY - Review Prospective Motion Correction in Brain Imaging: A Review Julian Maclaren,1,2* Michael Herbst,1 Oliver Speck,3 and Maxim Zaitsev1 Motion correction in magnetic resonance imaging by real-time adjustment of the imaging pulse sequence was first proposed more than 20 years ago. Recent advances have resulted from combining real-time correction with new navigator and external tracking mechanisms capable of quantifying rigid-body motion in all 6 degrees of freedom. The", "v": null, "note": ""}, {"id": "cal-17", "kind": "cal", "q": "The section of an MR phantom consisting of closely spaced lines or holes containing material with strong difference in signal intensity from the background is used to measure", "doc": "uploads/3/4/5/7/34572113/j_applied_clin_med_phys_-_2025_-_jordanova_-_adult_brain_t1_and_t2_values_measured_at_3_t_using_magnetic_resonance.pdf", "g": 0, "snip": "Received: 24 April 2025 Revised: 11 September 2025 Accepted: 19 September 2025 DOI: 10.1002/acm2.70289 RESEARCH ARTICLE Adult brain T1 and T2 values measured at 3 T using magnetic resonance \ufb01ngerprinting with phantom validation Kalina V. Jordanova1 Stephen E. Ogier1 Stephen E. Russek1 Cassandra M. Stoffer1 Karl F. Stupic1 Guido Buonincontri2 Mathias Nittka2 Kathryn E. Keenan1 1National Institute of Standards and Technology, Boulder, Colorado, USA 2Magnetic Resonance, Siemens Healthineers AG, Erlangen,", "v": null, "note": ""}, {"id": "cal-18", "kind": "cal", "q": "A small metallic object is being tested for translational forces by suspending it from a string at the edge of the scanner bore opening using the ASTM method. The hanging object deflects the string by 40\u00ba from the vertical. Which of the following conclusions is incorrect?", "doc": "uploads/3/4/5/7/34572113/third_place01337441-201807000-00004.pdf", "g": 2, "snip": "Third Place: MRI safety of external fixation devices: a review of the literature Kevin J. Perry, MD, DPT, Patrick A. Massey, MD, Alberto Simoncini, MD and R. Shane Barton, MD LSU Health, Shreveport, Louisiana ABSTRACT Orthopaedic trauma patients often require temporary stabiliza- tion prior to definitive treatment following the principles of damage control orthopaedics (DCO). DCO includes the use of temporary or supplemental implants including pelvic external fixators, large external", "v": null, "note": ""}, {"id": "cal-19", "kind": "cal", "q": "What happens to the imaging time in a PI study as the acceleration factor (R) is increased from 2 to 8?", "doc": "uploads/3/4/5/7/34572113/riederer_et_al-2015-journal_of_magnetic_resonance_imaging.pdf", "g": 1, "snip": "CME Article Recent Advances in 3D Time-Resolved Contrast- Enhanced MR Angiography Stephen J. Riederer, PhD,1 Clifton R. Haider, PhD,2 Eric A. Borisch, MS,1 Paul T. Weavers, PhD,1 and Phillip M. Young, MD3 This article is accredited as a journal-based CME activity. If you wish to receive credit for this activity, please refer to the website: www.wileyhealthlearning.com/jmri ACCREDITATION AND DESIGNATION STATEMENT Blackwell Futura Media Services designates this journal based CME activity", "v": null, "note": ""}]}]}, {"id": "q", "title": "Questions", "heading": "Are these fair test questions?", "sub": "One hundred and five questions written by hand to test the system, held out from everything it learns on. Each was written from a topic on the site and then deliberately reworded, so that answering requires understanding rather than matching the original phrasing. What needs a physicist is whether each question is <em>answerable<\/em>, <em>unambiguous<\/em>, and <em>actually about what it claims to be about<\/em>. Four further items were dropped before this list: <code>functional-mribold---i<\/code>, <code>mrs-i---basics<\/code>, <code>perfusion-i-intro--dsc<\/code>, <code>safety-orthopedic<\/code> \u2014 all section index pages rather than questions.<br><br><strong>Twenty-seven are grouped first as flagged.<\/strong> An automatic check found they share two or more terms with the opening sentence of their reference answer, which is where the conclusion usually sits. That check cannot tell the difference between a question restating its <em>premise<\/em> and one revealing its <em>answer<\/em> &mdash; on a first reading most look fine. They are grouped only so the ones most worth a second look come first.", "groups": [{"label": "Flagged \u2014 worth a closer look", "items": [{"id": "forcetorque-testing", "kind": "q", "title": "ASTM testing for force and torque", "q": "How are translational force and torque on an implant measured for safety labelling?", "npdf": 2, "flag": 3, "v": null, "note": ""}, {"id": "fall-to-lowest-state", "kind": "q", "title": "Boltzmann distribution of spin energies", "q": "If systems tend towards minimum energy, why don't all protons occupy the lower spin state?", "npdf": 1, "flag": 5, "v": null, "note": ""}, {"id": "why-not-single-ir", "kind": "q", "title": "Cardiac inversion recovery mri", "q": "Why use a double inversion rather than a single carefully chosen inversion time to null blood?", "npdf": 1, "flag": 3, "v": null, "note": ""}, {"id": "measuring-delta", "kind": "q", "title": "Chemical Shift Values", "q": "How are proton chemical shifts referenced and reported?", "npdf": 1, "flag": 2, "v": null, "note": ""}, {"id": "dl-playground", "kind": "q", "title": "deep learning simulation", "q": "What is involved in designing a neural network architecture for an imaging task?", "npdf": 3, "flag": 2, "v": null, "note": ""}, {"id": "deoxy-hb-v-met-hb", "kind": "q", "title": "Electronic structure deoxyhemoglobin vs methemoglobin", "q": "Why is methaemoglobin more strongly paramagnetic than deoxyhaemoglobin, given the iron has lost an electron?", "npdf": 0, "flag": 2, "v": null, "note": ""}, {"id": "ferumoxytol-relaxivity", "kind": "q", "title": "ferumoxytol relaxivity", "q": "How does the relaxivity of the iron oxide agent compare with gadolinium chelates?", "npdf": 9, "flag": 3, "v": null, "note": ""}, {"id": "why-gre-uarr-flow-signal", "kind": "q", "title": "Flow on GRE sequences", "q": "Why does flowing blood appear bright on gradient-echo sequences?", "npdf": 1, "flag": 2, "v": null, "note": ""}, {"id": "does-gd-affect-t2", "kind": "q", "title": "Gadolinium and T2", "q": "Are the T2-shortening effects of gadolinium ever visible at routine clinical doses?", "npdf": 2, "flag": 4, "v": null, "note": ""}, {"id": "k-space-grid", "kind": "q", "title": "k-space: grid", "q": "What does each individual point in the raw data matrix represent?", "npdf": 1, "flag": 2, "v": null, "note": ""}, {"id": "machine-learning-ml", "kind": "q", "title": "Machine learning", "q": "How do artificial intelligence, machine learning and deep learning relate to one another?", "npdf": 5, "flag": 2, "v": null, "note": ""}, {"id": "which-is-the-north-pole", "kind": "q", "title": "Magnetic poles", "q": "Which end of the scanner bore is taken to be the north pole?", "npdf": 0, "flag": 3, "v": null, "note": ""}, {"id": "magnetic-rods", "kind": "q", "title": "Magnetic rods", "q": "What safety concerns apply to magnetically adjustable orthopaedic growing rods?", "npdf": 4, "flag": 2, "v": null, "note": ""}, {"id": "magnetizing-metal", "kind": "q", "title": "Magnetic saturation", "q": "Can the scanner's field permanently magnetise a piece of ferromagnetic metal?", "npdf": 6, "flag": 3, "v": null, "note": ""}, {"id": "magnetization-transfer", "kind": "q", "title": "Magnetization Transfer", "q": "How do magnetisation transfer pulses improve angiographic contrast?", "npdf": 6, "flag": 2, "v": null, "note": ""}, {"id": "heart-valves", "kind": "q", "title": "MR safety: cardiac valves", "q": "Can patients with prosthetic cardiac valves be scanned safely?", "npdf": 7, "flag": 3, "v": null, "note": ""}, {"id": "pressure-monitorsbolts", "kind": "q", "title": "MR safety: intracranial pressure monitors and bolts", "q": "Can patients with intracranial pressure monitoring devices be scanned?", "npdf": 2, "flag": 2, "v": null, "note": ""}, {"id": "sternal-wiresimplants", "kind": "q", "title": "MRI safety: sternal wires", "q": "Do sternal closure wires cause problems when scanning after cardiac surgery?", "npdf": 2, "flag": 3, "v": null, "note": ""}, {"id": "ti-to-null-myocardium", "kind": "q", "title": "Myocardial perfusion MRI", "q": "How is the inversion time chosen to demonstrate myocardial enhancement?", "npdf": 8, "flag": 2, "v": null, "note": ""}, {"id": "wirestubes-thru-wall", "kind": "q", "title": "Penetration panel", "q": "How do pipes, cables and tubes pass through the wall of an RF-shielded room?", "npdf": 2, "flag": 4, "v": null, "note": ""}, {"id": "personnel-exposure", "kind": "q", "title": "Personnel exposure MRI", "q": "Are there occupational health risks for staff working around the scanner, including pregnant workers?", "npdf": 12, "flag": 5, "v": null, "note": ""}, {"id": "propellerblade", "kind": "q", "title": "PROPELLER/BLADE", "q": "How does sampling k-space in rotating strips reduce motion artifact?", "npdf": 4, "flag": 2, "v": null, "note": ""}, {"id": "why-i--frac12-1-etc", "kind": "q", "title": "Quantized spin", "q": "Why are the allowed values of the spin quantum number restricted to whole or half integers?", "npdf": 1, "flag": 4, "v": null, "note": ""}, {"id": "rectangular-fov", "kind": "q", "title": "Rectangular FOV", "q": "How is a rectangular field of view achieved, and why would you want one?", "npdf": 1, "flag": 2, "v": null, "note": ""}, {"id": "solomon-bloembergen", "kind": "q", "title": "Solomon-Bloembergen-Morgan theory", "q": "Which theory describes dipole-dipole relaxation extended to include electron spin?", "npdf": 0, "flag": 6, "v": null, "note": ""}, {"id": "activation-blobs", "kind": "q", "title": "SPM Maps: \"Blobs\"", "q": "How are the coloured activation regions on a statistical fMRI map produced, and what do they actually indicate?", "npdf": 5, "flag": 2, "v": null, "note": ""}, {"id": "why-discrete-ghosts", "kind": "q", "title": "Why discrete ghosts", "q": "Why do motion artifacts appear as discrete replicas along the phase-encode direction?", "npdf": 2, "flag": 2, "v": null, "note": ""}]}, {"label": "A \u2013 M", "items": [{"id": "active-shimming", "kind": "q", "title": "Active magnetic shimming", "q": "How do current-carrying coils correct inhomogeneity in the main magnetic field?", "npdf": 5, "flag": 0, "v": null, "note": ""}, {"id": "acutedeoxy-hb", "kind": "q", "title": "Acute hematoma MRI; deoxyhemoglobin", "q": "Why does a clot lose signal on T2-weighted images during the first day or two after bleeding?", "npdf": 4, "flag": 0, "v": null, "note": ""}, {"id": "what-is-asl", "kind": "q", "title": "Arterial spin labeling (ASL)", "q": "How is perfusion measured without administering any contrast agent?", "npdf": 7, "flag": 0, "v": null, "note": ""}, {"id": "b1rms-vs-sar", "kind": "q", "title": "B1+ RMS", "q": "Besides SAR, what measure of RF exposure is used when checking implant scanning conditions?", "npdf": 5, "flag": 0, "v": null, "note": ""}, {"id": "bold-contrast", "kind": "q", "title": "BOLD Contrast Mechanism", "q": "What physical mechanism generates image contrast in functional brain imaging?", "npdf": 4, "flag": 0, "v": null, "note": ""}, {"id": "breast-tissue-expanders", "kind": "q", "title": "Breast tissue expanders", "q": "What hazard does an implanted breast expander present during scanning?", "npdf": 8, "flag": 0, "v": null, "note": ""}, {"id": "cartilage-mapping", "kind": "q", "title": "Cartilage Mapping", "q": "How do quantitative cartilage assessment sequences work, and what are they used for clinically?", "npdf": 6, "flag": 0, "v": null, "note": ""}, {"id": "what-causes-magnetism", "kind": "q", "title": "Cause of magnetism", "q": "What gives rise to the magnetic properties of matter?", "npdf": 2, "flag": 0, "v": null, "note": ""}, {"id": "ce-mra-artifacts", "kind": "q", "title": "CE-MRA artifacts", "q": "Which artifacts should be recognised on contrast-enhanced angiographic studies?", "npdf": 3, "flag": 0, "v": null, "note": ""}, {"id": "cochlear-implants", "kind": "q", "title": "Cochlear implants MR safety", "q": "Can a patient with a surgically implanted hearing device undergo scanning?", "npdf": 9, "flag": 0, "v": null, "note": ""}, {"id": "conditional-implants", "kind": "q", "title": "Conditional Implants", "q": "What does the 'MR Conditional' designation on a device label actually mean?", "npdf": 3, "flag": 0, "v": null, "note": ""}, {"id": "cw-v-pulsed-nmr", "kind": "q", "title": "CW v Pulsed NMR", "q": "How does continuous-wave excitation differ from pulsed excitation in NMR?", "npdf": 4, "flag": 0, "v": null, "note": ""}, {"id": "what-is-dce", "kind": "q", "title": "DCE intro", "q": "How does dynamic contrast-enhanced imaging differ from dynamic susceptibility contrast imaging?", "npdf": 3, "flag": 0, "v": null, "note": ""}, {"id": "dixon-method", "kind": "q", "title": "Dixon method", "q": "How does chemical-shift-based separation of fat and water work, and when is it preferred?", "npdf": 5, "flag": 0, "v": null, "note": ""}, {"id": "dark-blooddouble-ir", "kind": "q", "title": "Double Inversion recovery cardiac black blood", "q": "How does a double inversion preparation null flowing blood for imaging the cardiac wall?", "npdf": 5, "flag": 0, "v": null, "note": ""}, {"id": "driven-equilibrium", "kind": "q", "title": "Driven equilibrium", "q": "What does a fast-recovery pulse applied at the end of an echo train accomplish?", "npdf": 4, "flag": 0, "v": null, "note": ""}, {"id": "uses-of-tractography", "kind": "q", "title": "DTI Tractography Uses", "q": "What are the clinical applications of fibre tracking?", "npdf": 7, "flag": 0, "v": null, "note": ""}, {"id": "ecg-problems", "kind": "q", "title": "ECG gating problems MRI", "q": "What degrades the ECG trace used for cardiac gating, and how can the signal be improved?", "npdf": 4, "flag": 0, "v": null, "note": ""}, {"id": "emergency-stop-button", "kind": "q", "title": "Emergency rundown unit", "q": "What emergency controls does a scanner have, and what does each one actually do?", "npdf": 1, "flag": 0, "v": null, "note": ""}, {"id": "fat-suppression", "kind": "q", "title": "Fat Suppression", "q": "Why must lipid signal be suppressed in spectroscopy, and how is it done?", "npdf": 3, "flag": 0, "v": null, "note": ""}, {"id": "best-method", "kind": "q", "title": "Fat suppression methods", "q": "With so many ways to suppress lipid signal, how do you decide which to use for a given study?", "npdf": 5, "flag": 0, "v": null, "note": ""}, {"id": "ferumoxytol", "kind": "q", "title": "ferumoxytol", "q": "How does the iron-based agent used off-label for vascular imaging work?", "npdf": 16, "flag": 0, "v": null, "note": ""}, {"id": "bo-effect-on-t1--t2", "kind": "q", "title": "Field strength dependence of T1 & T2", "q": "How do tissue relaxation times change when moving from 1.5T to 3T?", "npdf": 6, "flag": 0, "v": null, "note": ""}, {"id": "mind-readinglie-detector", "kind": "q", "title": "fMRI Mind Reading", "q": "Can functional imaging decode what a subject is thinking?", "npdf": 9, "flag": 0, "v": null, "note": ""}, {"id": "best-fmri-software", "kind": "q", "title": "fMRI Processing Software", "q": "Which software packages are available for processing functional brain imaging data, and how do they compare?", "npdf": 7, "flag": 0, "v": null, "note": ""}, {"id": "fmri-paradigm-design", "kind": "q", "title": "fMRI Protocol", "q": "How should a task-based functional imaging experiment be structured?", "npdf": 9, "flag": 0, "v": null, "note": ""}, {"id": "so-many-gd-agents", "kind": "q", "title": "Gadolinium contrast agents", "q": "What actually distinguishes the various commercially available gadolinium agents?", "npdf": 12, "flag": 0, "v": null, "note": ""}, {"id": "gastric-pacemakers", "kind": "q", "title": "Gastric pacemakers", "q": "Which implanted gastric stimulation devices can be scanned?", "npdf": 2, "flag": 0, "v": null, "note": ""}, {"id": "general-linear-model", "kind": "q", "title": "General Linear Model (GLM)", "q": "How does the general linear model analyse a functional imaging time series?", "npdf": 5, "flag": 0, "v": null, "note": ""}, {"id": "gibbs-artifact", "kind": "q", "title": "Gibbs artifact?", "q": "What causes the fine parallel lines seen next to sharp high-contrast boundaries?", "npdf": 4, "flag": 0, "v": null, "note": ""}, {"id": "gradient-echo1", "kind": "q", "title": "Gradient Echo (GRE)", "q": "How does a gradient echo differ from a free induction decay?", "npdf": 2, "flag": 0, "v": null, "note": ""}, {"id": "grase", "kind": "q", "title": "GRASE", "q": "How does GRASE combine spin and gradient echoes within one acquisition?", "npdf": 3, "flag": 0, "v": null, "note": ""}, {"id": "gre-vs-se", "kind": "q", "title": "GRE v SE", "q": "What fundamentally distinguishes gradient-echo from spin-echo signal formation?", "npdf": 3, "flag": 0, "v": null, "note": ""}, {"id": "hunters-angle", "kind": "q", "title": "Hunter's Angle", "q": "What does the relative alignment of metabolite peaks on a brain spectrum tell you?", "npdf": 2, "flag": 0, "v": null, "note": ""}, {"id": "why-homogeneity", "kind": "q", "title": "Importance of Field Homogeneity", "q": "How important is field homogeneity when choosing a magnet?", "npdf": 1, "flag": 0, "v": null, "note": ""}, {"id": "in-phaseout-of-phase", "kind": "q", "title": "In phase/out of phase", "q": "What is meant by in-phase versus opposed-phase acquisition?", "npdf": 1, "flag": 0, "v": null, "note": ""}, {"id": "b0-vs-b50", "kind": "q", "title": "Initial b-value", "q": "In abdominal diffusion imaging, why do many protocols start at 50 s/mm\u00b2 rather than at zero?", "npdf": 2, "flag": 0, "v": null, "note": ""}, {"id": "field-of-view-fov", "kind": "q", "title": "k-space: FOV", "q": "What determines the field of view in terms of how raw data are sampled?", "npdf": 1, "flag": 0, "v": null, "note": ""}, {"id": "magnetic-dipoles", "kind": "q", "title": "Magnetic dipole moment", "q": "What is a magnetic dipole moment?", "npdf": 1, "flag": 0, "v": null, "note": ""}, {"id": "is-field-ever-turned-off", "kind": "q", "title": "Magnetic field off", "q": "Is the main magnetic field switched off between patients?", "npdf": 0, "flag": 0, "v": null, "note": ""}]}, {"label": "N \u2013 Z", "items": [{"id": "why-shimming", "kind": "q", "title": "Magnetic shimming", "q": "What is shimming, and why is it necessary?", "npdf": 3, "flag": 0, "v": null, "note": ""}, {"id": "mr-fingerprinting", "kind": "q", "title": "MR Fingerprinting", "q": "How can several tissue parameters be measured simultaneously in a single rapid acquisition?", "npdf": 9, "flag": 0, "v": null, "note": ""}, {"id": "image-uniformity", "kind": "q", "title": "MR image uniformity", "q": "How is signal uniformity measured during scanner quality assurance?", "npdf": 3, "flag": 0, "v": null, "note": ""}, {"id": "types-of-magnets", "kind": "q", "title": "MR magnet types", "q": "What magnet designs are used in clinical scanners, and how do they differ?", "npdf": 2, "flag": 0, "v": null, "note": ""}, {"id": "cardiac-monitors", "kind": "q", "title": "MR safety: loop recorders", "q": "Is it safe to scan a patient with an implanted cardiac loop recorder?", "npdf": 4, "flag": 0, "v": null, "note": ""}, {"id": "mra-artifacts-ce", "kind": "q", "title": "MRA artifacts (CE)", "q": "What pitfalls can mimic disease on contrast-enhanced vascular studies?", "npdf": 2, "flag": 0, "v": null, "note": ""}, {"id": "mra-artifacts-tof", "kind": "q", "title": "MRA Artifacts (TOF)", "q": "Which artifacts commonly appear on time-of-flight angiograms?", "npdf": 1, "flag": 0, "v": null, "note": ""}, {"id": "perfusion-why-and-how", "kind": "q", "title": "Myocardial Perfusion", "q": "How is a myocardial perfusion study performed, and what is it used for?", "npdf": 5, "flag": 0, "v": null, "note": ""}, {"id": "organ-differences", "kind": "q", "title": "Organ Differences", "q": "How do phosphorus spectra differ between skeletal muscle, brain and liver?", "npdf": 13, "flag": 0, "v": null, "note": ""}, {"id": "origin-of-mr-signal", "kind": "q", "title": "Origin of the MR signal", "q": "What physically produces the signal picked up by the receiver coil?", "npdf": 3, "flag": 0, "v": null, "note": ""}, {"id": "noise-in-pi", "kind": "q", "title": "Parallel Imaging (PI): noise", "q": "Why do accelerated parallel acquisitions look noisier than conventional ones?", "npdf": 5, "flag": 0, "v": null, "note": ""}, {"id": "partial-volume-effects", "kind": "q", "title": "Partial volume effects", "q": "What is partial voluming, and how does it affect interpretation?", "npdf": 2, "flag": 0, "v": null, "note": ""}, {"id": "pe-and-fe-together", "kind": "q", "title": "Phase and frequency encoding", "q": "How do phase and frequency encoding work together to localise signal in two dimensions?", "npdf": 2, "flag": 0, "v": null, "note": ""}, {"id": "prostate-spectra", "kind": "q", "title": "Prostate Spectra", "q": "How are spectra from the prostate interpreted?", "npdf": 6, "flag": 0, "v": null, "note": ""}, {"id": "quantifying-flow", "kind": "q", "title": "Quantifying flow", "q": "How is absolute blood flow derived from arterial spin labelling data?", "npdf": 11, "flag": 0, "v": null, "note": ""}, {"id": "utility-of-dce", "kind": "q", "title": "Quantitative DCE", "q": "When is quantitative dynamic contrast-enhanced imaging genuinely useful?", "npdf": 9, "flag": 0, "v": null, "note": ""}, {"id": "qsm", "kind": "q", "title": "Quantitative susceptibility mapping", "q": "Can tissue magnetic susceptibility be measured quantitatively rather than just qualitatively?", "npdf": 8, "flag": 0, "v": null, "note": ""}, {"id": "rf-pulse-shapes", "kind": "q", "title": "RF Pulse Shapes", "q": "What RF pulse envelopes are used, and what is each one suited to?", "npdf": 10, "flag": 0, "v": null, "note": ""}, {"id": "why-is-rf-input-needed", "kind": "q", "title": "RF requirement for NMR", "q": "Why is radiofrequency energy required to produce a detectable NMR signal?", "npdf": 0, "flag": 0, "v": null, "note": ""}, {"id": "room-temp-supercon", "kind": "q", "title": "Room temperature superconductor", "q": "Could high-temperature superconductors be used in future magnet construction?", "npdf": 4, "flag": 0, "v": null, "note": ""}, {"id": "routine-quality-control", "kind": "q", "title": "Routine Quality Control", "q": "What routine quality control testing must be carried out on a clinical scanner?", "npdf": 2, "flag": 0, "v": null, "note": ""}, {"id": "samer", "kind": "q", "title": "SAMER", "q": "How does the SAMER method correct for patient motion retrospectively?", "npdf": 2, "flag": 0, "v": null, "note": ""}, {"id": "what-is-sar", "kind": "q", "title": "Specific Absorption Rate", "q": "What does specific absorption rate quantify?", "npdf": 9, "flag": 0, "v": null, "note": ""}, {"id": "spin-density-h-effects", "kind": "q", "title": "Spin density", "q": "What does spin density mean, and how does it influence image contrast?", "npdf": 7, "flag": 0, "v": null, "note": ""}, {"id": "spin-phase-effects", "kind": "q", "title": "Spin phase effects?", "q": "What are spin-phase effects, and why do they matter for moving spins?", "npdf": 2, "flag": 0, "v": null, "note": ""}, {"id": "what-is-spin", "kind": "q", "title": "Spin What is spin?", "q": "What is nuclear spin?", "npdf": 1, "flag": 0, "v": null, "note": ""}, {"id": "spirspair-v-stir", "kind": "q", "title": "SPIR/SPAIR v STIR", "q": "How do spectrally selective inversion techniques differ from STIR, and when is each appropriate?", "npdf": 4, "flag": 0, "v": null, "note": ""}, {"id": "cine-parameters", "kind": "q", "title": "SSFP Cardiac cine", "q": "How should imaging parameters be selected for a cardiac cine acquisition?", "npdf": 4, "flag": 0, "v": null, "note": ""}, {"id": "subarachnoid-blood", "kind": "q", "title": "Subarachnoid hemorrhage MRI", "q": "Why does subarachnoid blood evolve differently from a hematoma within the brain parenchyma?", "npdf": 6, "flag": 0, "v": null, "note": ""}, {"id": "phase-of-blood-v-ca", "kind": "q", "title": "Susceptibility phase", "q": "How can calcification be told apart from blood products on susceptibility phase images?", "npdf": 6, "flag": 0, "v": null, "note": ""}, {"id": "t1-rho", "kind": "q", "title": "T1-rho (T1\u03c1)", "q": "What does T1-rho measure, and how does it differ from T1 and T2?", "npdf": 5, "flag": 0, "v": null, "note": ""}, {"id": "what-does-k-stand-for", "kind": "q", "title": "The Meaning of \"", "q": "Why is the letter k used to denote spatial frequency?", "npdf": 0, "flag": 0, "v": null, "note": ""}, {"id": "what-is-k-space", "kind": "q", "title": "To many students, k-space seems frightening and mysterious. It doesn't have to be. At its corek-space can be defined in", "q": "What is k-space, in simple terms?", "npdf": 7, "flag": 0, "v": null, "note": ""}, {"id": "transmitter-gain", "kind": "q", "title": "Transmitter gain", "q": "What is achieved by adjusting transmitter gain during prescan?", "npdf": 3, "flag": 0, "v": null, "note": ""}, {"id": "need-for-vibration-testing", "kind": "q", "title": "Vibration testing", "q": "Why is vibration testing required before installing a new scanner?", "npdf": 2, "flag": 0, "v": null, "note": ""}, {"id": "whyhow-stress-test", "kind": "q", "title": "Why/How Stress Test Why would you want to do a stress MRI? How is it performed?", "q": "Why and how is a stress cardiac MRI performed?", "npdf": 4, "flag": 0, "v": null, "note": ""}, {"id": "how-to-sup3sup1p-mrs", "kind": "q", "title": "\u00b3\u00b9P MRS Technique", "q": "What hardware and technique changes are needed to perform phosphorus rather than proton spectroscopy?", "npdf": 3, "flag": 0, "v": null, "note": ""}, {"id": "effect-of-a-minus90deg-pulse", "kind": "q", "title": "\u221290\u00b0 RF pulse", "q": "Can applying an inverted 90\u00b0 pulse undo the effect of the original excitation?", "npdf": 1, "flag": 0, "v": null, "note": ""}]}]}]}</script>
+<script id="app">
+(function(){
+  var S = JSON.parse(document.getElementById('state').textContent);
+  document.getElementById('mount').innerHTML =
+    document.getElementById('shell').textContent.replace(/<\\\//g,'</');
+  var root = document.getElementById('root');
+  var canWrite = false, api = null, timer = null, dirty = false, dl = null;
+  var WHO = S.expert || '';
+  var LSKEY = S.key + (WHO ? '::' + WHO : '');
+
+  var VERDICTS = {
+    acr:  [['ok','senses look right'],['fx','shares/order wrong'],['no','a sense is missing or wrong']],
+    calc: [['ok','question + answer ok'],['fx','answer wrong'],['no','question unfair']],
+    q:    [['ok','good question'],['fx','needs rewording'],['no','drop it']],
+    cal:  [['ok','grade is right'],['fx','too generous'],['no','too harsh']]
+  };
+
+  function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g, function(c){
+    return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
+
+  function allItems(){
+    var out=[]; S.sections.forEach(function(sec){
+      sec.groups.forEach(function(g){ out = out.concat(g.items); }); });
+    return out;
+  }
+  function counts(){ var a=allItems();
+    return {done:a.filter(function(x){return x.v;}).length, total:a.length}; }
+  function find(id){ var a=allItems();
+    for(var i=0;i<a.length;i++) if(a[i].id===id) return a[i];
+    return null; }
+  function cls(v){ return v==='ok'?'okd':v==='no'?'flag':v==='fx'?'fix':''; }
+
+  function body(x){
+    if (x.kind === 'acr') {
+      var h = '<div class="acr">'+esc(x.a)+'</div>';
+      (x.senses||[]).forEach(function(sn){
+        if (sn.unseen) {
+          h += '<div class="alt"><span class="lbl">also defined</span>'+esc(sn.exp)
+             + ' <span style="color:var(--ink-3)">(not in the sampled passages)</span></div>';
+        } else {
+          h += '<div class="sense"><span class="lbl">'+Math.round(sn.share*100)+'%</span>'
+             + esc(sn.exp)+'</div>';
+          if (sn.cues && sn.cues.length)
+            h += '<div class="freq" style="margin-top:2px">appears near: '
+               + esc(sn.cues.join(', '))+'</div>';
+        }
+      });
+      return h + '<div class="freq">'+x.n+' mentions across '+x.docs
+           + ' documents &middot; '+x.sample+' passages sampled</div>';
+    }
+    if (x.kind === 'calc') {
+      return '<span class="cat">'+esc(x.id)+'</span>'
+           + '<div class="q">'+esc(x.q)+'</div>'
+           + '<div class="ansline"><span class="val">'+esc(x.ans)+' '+esc(x.unit)+'</span>'
+           + '<span class="rel">'+esc(x.rel)+'</span>'
+           + '<span class="rel">tol &plusmn;'+Math.round(x.tol*100)+'%</span></div>';
+    }
+    if (x.kind === 'cal') {
+      var GN = {'2':'a right page to consult','1':'useful supporting material',
+                '0':'same area, would not help','-1':'unrelated'};
+      var hc = '<span class="cat">machine grade '+esc(x.g)+' &middot; '+esc(GN[String(x.g)]||'')+'</span>';
+      hc += '<div class="qt">'+esc(x.q)+'</div>';
+      hc += '<div class="freq" style="margin-bottom:7px">document: '+esc(x.doc)+'</div>';
+      hc += '<div class="q" style="font-size:14px;color:var(--ink-3)">'+esc(x.snip)+'…</div>';
+      return hc;
+    }
+    var h2 = '<span class="cat">'+esc(x.id)+'</span>';
+    if (x.title) h2 += '<div class="qt">'+esc(x.title)+'</div>';
+    h2 += '<div class="q">'+esc(x.q)+'</div>';
+    h2 += '<div class="freq">'+(x.npdf||0)+' linked source documents';
+    if (x.flag) h2 += '  \u00b7  shares '+x.flag+' terms with the answer opening';
+    h2 += '</div>';
+    return h2;
+  }
+
+  function card(x){
+    var defs = VERDICTS[x.kind] || VERDICTS.q;
+    var b = defs.map(function(d){
+      return '<button class="v '+d[0]+'" data-id="'+x.id+'" data-v="'+d[0]+'" aria-pressed="'
+           + (x.v===d[0])+'">'+esc(d[1])+'</button>'; }).join('');
+    return '<div class="item '+(x.v?'done ':'')+cls(x.v)+'" id="i-'+x.id+'">'
+         + '<div>'+body(x)+'</div><div class="acts">'+b+'</div>'
+         + '<textarea class="note" data-id="'+x.id+'" placeholder="correction or note (optional)">'
+         + esc(x.note)+'</textarea></div>';
+  }
+
+  function render(){
+    var tab = root.dataset.tab || S.sections[0].id;
+    var c = counts(), pct = c.total ? Math.round(100*c.done/c.total) : 0;
+    var h = '<div class="bar">';
+    if (WHO) h += '<span class="who">reviewer <b>'+esc(WHO)+'</b></span>';
+    if (S.sections.length > 1)
+      S.sections.forEach(function(sec){
+        var n=0; sec.groups.forEach(function(g){ n+=g.items.length; });
+        h += '<button class="tab" data-tab="'+sec.id+'" aria-selected="'+(tab===sec.id)+'">'
+           + esc(sec.title)+' ('+n+')</button>'; });
+    h += '<div class="prog"><span>'+c.done+' / '+c.total+' reviewed</span>'
+       + '<span class="pbar"><span class="pfill" style="width:'+pct+'%"></span></span>'
+       + '<button class="tab exp" data-act="export">export my answers</button>'
+       + '</div></div>';
+    if (root.dataset.exp === '1') h += panel();
+    S.sections.forEach(function(sec){
+      if (sec.id !== tab) return;
+      h += '<section><h2>'+esc(sec.heading)+'</h2><p class="sub">'+sec.sub+'</p>';
+      sec.groups.forEach(function(g){
+        if (g.label) h += '<div class="grp">'+esc(g.label)+' &middot; '+g.items.length+'</div>';
+        g.items.forEach(function(x){ h += card(x); }); });
+      h += '</section>';
+    });
+    root.innerHTML = h;
+  }
+
+  root.addEventListener('click', function(e){
+    var t = e.target.closest('button'); if (!t) return;
+    if (t.dataset.act === 'export') { doExport(); return; }
+    if (t.dataset.act === 'copy') {
+      var ta = document.getElementById('expjson');
+      if (ta) { ta.focus(); ta.select();
+        try { document.execCommand('copy'); t.textContent = 'copied'; } catch(_){} }
+      return;
+    }
+    if (t.dataset.act === 'closepanel') { root.dataset.exp='0'; render(); return; }
+    if (t.classList.contains('tab')) { root.dataset.tab=t.dataset.tab; render(); window.scrollTo(0,0); return; }
+    if (!t.classList.contains('v')) return;
+    var x = find(t.dataset.id); if (!x) return;
+    x.v = (x.v === t.dataset.v) ? null : t.dataset.v;
+    var card = document.getElementById('i-'+x.id);
+    if (card) {
+      card.className = 'item ' + (x.v?'done ':'') + cls(x.v);
+      card.querySelectorAll('button.v').forEach(function(b){
+        b.setAttribute('aria-pressed', String(x.v === b.dataset.v)); });
+    }
+    var c = counts();
+    var pf=document.querySelector('.pfill'), pt=document.querySelector('.prog span');
+    if (pf) pf.style.width = (c.total?Math.round(100*c.done/c.total):0)+'%';
+    if (pt) pt.textContent = c.done+' / '+c.total+' reviewed';
+    schedule();
+  });
+
+  root.addEventListener('input', function(e){
+    if (!e.target.classList.contains('note')) return;
+    var x = find(e.target.dataset.id); if (!x) return;
+    x.note = e.target.value; schedule();
+  });
+
+  function payload(){
+    var done = allItems().filter(function(x){ return x.v || (x.note||'').trim(); })
+      .map(function(x){ return {id:x.id, kind:x.kind, v:x.v||null,
+                                note:(x.note||'').trim()}; });
+    return JSON.stringify({schema:'mriq-review/1', page:S.key, title:S.title,
+      expert:WHO || null, version:S.version|0,
+      n_items:counts().total, n_answered:done.length, answers:done}, null, 1);
+  }
+
+  function fname(){
+    var who = (WHO || 'anonymous').toLowerCase().replace(/[^a-z0-9]+/g,'-')
+      .replace(/^-|-$/g,'') || 'anonymous';
+    return S.key + '--' + who + '.json';
+  }
+
+  function panel(){
+    var c = counts();
+    return '<div class="expanel"><h3>Send these answers back</h3>'
+      + '<p>' + c.done + ' of ' + c.total + ' items answered. If the download did not '
+      + 'start, copy the text below into a file named <code>' + esc(fname()) + '</code> '
+      + 'and send it back. Nothing here is lost by closing the tab.</p>'
+      + '<textarea id="expjson" readonly spellcheck="false">' + esc(payload()) + '</textarea>'
+      + '<div style="display:flex;gap:9px;margin-top:9px">'
+      + '<button class="tab" data-act="copy">copy to clipboard</button>'
+      + '<button class="tab" data-act="closepanel">close</button></div></div>';
+  }
+
+  function saveViaBlob(){
+    try {
+      var url = URL.createObjectURL(new Blob([payload()], {type:'application/json'}));
+      var a = document.createElement('a');
+      a.href = url; a.download = fname();
+      document.body.appendChild(a); a.click(); document.body.removeChild(a);
+      setTimeout(function(){ URL.revokeObjectURL(url); }, 1000);
+      setStatus('answers exported as ' + fname());
+    } catch(_) { setStatus('download unavailable \u2014 copy the text below instead'); }
+  }
+
+  function doExport(){
+    root.dataset.exp = '1'; render(); window.scrollTo(0,0);
+    if (!dl) { saveViaBlob(); return; }
+    dl.save({filename: fname(), data: payload()})
+      .then(function(){ setStatus('answers exported as ' + fname()); })
+      .catch(function(err){
+        var c = err && err.code;
+        if (c === 'declined' || c === 'rate_limited') return;
+        setStatus('download unavailable — copy the text below instead');
+      });
+  }
+
+  function schedule(){
+    dirty = true;
+    try { localStorage.setItem(LSKEY, JSON.stringify(allItems().map(function(x){
+      return {id:x.id, v:x.v, note:x.note}; }))); } catch(_){}
+    if (!canWrite) { setStatus(null); return; }
+    setStatus('saving…');
+    clearTimeout(timer); timer = setTimeout(save, 1800);
+  }
+
+  function buildDoc(){
+    S.version = (S.version|0) + 1;
+    return '<!doctype html>\n<html lang="en"><head><meta charset="utf-8">'
+      + '<meta name="viewport" content="width=device-width,initial-scale=1">'
+      + '<title>' + S.title + '</title>'
+      + '<link rel="preconnect" href="https://fonts.googleapis.com">'
+      + '<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>'
+      + '<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600'
+      + '&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Serif:ital,wght@0,400;0,600;0,700;1,400&display=swap">'
+      + '<style id="css">' + document.getElementById('css').textContent + '</style></head><body>'
+      + '<script id="shell" type="text/template">'
+      + document.getElementById('shell').textContent.replace(/<\//g,'<\\/') + '<\/script>'
+      + '<div class="wrap" id="mount"></div>'
+      + '<script id="state" type="application/json">'
+      + JSON.stringify(S).replace(/<\//g,'<\\/') + '<\/script>'
+      + '<script id="app">' + document.getElementById('app').textContent + '<\/script>'
+      + '</body></html>';
+  }
+
+  function save(){
+    if (!api || !dirty) return;
+    api.publish(buildDoc()).then(function(){ dirty=false; setStatus('saved'); })
+      .catch(function(err){
+        var c = err && err.code;
+        if (c === 'conflict') setStatus('someone else saved first — reloading to their version');
+        else if (c === 'not_granted' || c === 'not_writer') { canWrite=false; setStatus(null); }
+        else setStatus('could not save — your work is kept in this browser');
+      });
+  }
+
+  function setStatus(msg){
+    var el = document.getElementById('sbar'); if (!el) return;
+    if (msg) { el.className='status ok'; el.innerHTML='<b>'+esc(msg)+'</b>'; return; }
+    var who = WHO ? ' This copy belongs to <b>'+esc(WHO)+'</b>.' : '';
+    if (canWrite) { el.className='status ok';
+      el.innerHTML='<b>Saving is on.</b> Answers are written back into this page as you go, so '
+        +'they survive closing the tab.'+who+' When you finish, press '
+        +'<b>export my answers</b> as well &mdash; that is the copy we load into the system.'; }
+    else { el.className='status ro';
+      el.innerHTML='<b>Read-only &mdash; nothing is being saved back to us.</b> Your answers are '
+        +'kept in this browser alone and we cannot see them.'+who+' Work through the list, then '
+        +'press <b>export my answers</b> and send us the file. That is the only way your work '
+        +'reaches us.'; }
+  }
+
+  try {
+    var raw = localStorage.getItem(LSKEY);
+    if (raw) { var by={}; JSON.parse(raw).forEach(function(o){ by[o.id]=o; });
+      allItems().forEach(function(x){ var o=by[x.id];
+        if (o && !x.v && (o.v || o.note)) { x.v=o.v; x.note=o.note; } }); }
+  } catch(_){}
+
+  root.dataset.tab = S.sections[0].id;
+  render(); setStatus(null);
+
+  if (window.claude && claude.use) {
+    claude.use('artifact').then(function(a){
+      if (!a) return; api=a; canWrite=true; setStatus(null);
+    }).catch(function(){});
+    claude.use('downloads').then(function(d){ if (d) dl=d; }).catch(function(){});
+  }
+})();
+</script>
+
+
+</body>
+</html>
